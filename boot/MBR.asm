@@ -61,13 +61,16 @@ mov ch, al
 
 mov al, 4
 mov dl, BYTE [BOOT_DRIVE]
-mov bx, 0x7e00
+mov bx, 0x7c00
 mov ah, 0x02
 
 int 0x13
 
 ;Fatal error on fail
 jc err
+
+cmp al, 4
+jne err
 
 ;Jump to VBR
 cmp WORD [0x7dfe], 0xaa55 ;Check if VBR has boot signature
@@ -117,7 +120,7 @@ db 0x01 ;System ID
 db 0x01 ;Ending head
 db 0x11 ;Ending sector (and upper two bits for cylinder)
 db 0x50 ;Ending cylinder
-dd 0x02 ;Partion starting LBA
+dd 0x01 ;Partion starting LBA
 dd 0x0b3e ;Number of sectors
 
 ;Second Entry
