@@ -43,3 +43,5 @@ PARTION_OFFSET dw 0
 
 times 510-($-$$) nop
 dw 0xaa55
+
+times 2048-($-$$) nop
