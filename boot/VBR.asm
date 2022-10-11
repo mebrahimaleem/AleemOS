@@ -11,7 +11,7 @@
 ;BPB
 jmp short boot
 nop
-OEM db "FRDOS5.1"
+OEM db "ALEEMOS "
 SECTOR_BYTES dw 512
 CLUSTER_SECTORS db 1
 RESERVED_SECTORS dw 4
