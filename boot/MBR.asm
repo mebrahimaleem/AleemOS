@@ -44,41 +44,42 @@ mov BYTE [BOOT_DRIVE], dl
 	
 ;Read VBR from partition
 mov ebx, DWORD [bx] ;Get LBA of partition
-mov ax, bx
 
-xor dx, dx
-div WORD [TRACK_SECTORS]
-add dl, 1
-mov cl, dl
-mov ax, bx
-
-xor dx, dx
-div WORD [TRACK_SECTORS]
-mov dx, 0
-div WORD [HEADS]
-mov dh, dl
-mov ch, al
-
-mov al, 4
-mov dl, BYTE [BOOT_DRIVE]
-mov bx, 0x7c00
-mov ah, 0x02
-
+;Get drive parameters in case OS was copied to another medium (non 1.44M floppy)
+pusha
+mov ah, 8
+xor di, di
 int 0x13
+jc err ;Fatal error on fail
+and cx, 0x3f
+mov [TRACK_SECTORS], cx
+movzx dx, dh
+add dx, 1
+mov [HEADS], dx
+popa
 
-;Fatal error on fail
-jc err
-
-cmp al, 4
-jne err
+mov cx, 0x7c00
+call read_sector
 
 ;Jump to VBR
 cmp WORD [0x7dfe], 0xaa55 ;Check if VBR has boot signature
 jne err
-;Pass Partion table offset and boot drive to VBR
+
+;Pass Partition table offset and boot drive to VBR
 mov si, WORD [PARTITION_OFFSET]
 mov dl, BYTE [BOOT_DRIVE]
+
+;Pass drive parameters
+mov dx, [TRACK_SECTORS]
+mov cx, [HEADS]
+
+;Jump to VBR
 jmp 0x7c00
+
+
+times 218-($-$$) nop
+
+TIMESTAMP dq 0 ;NOTE: Setting the timestamp in assembly is useless since we write to the disk at a later time. This field should be set after writing to a disk.
 
 BOOT_DRIVE db 0
 PARTITION_OFFSET dw 0
@@ -101,14 +102,49 @@ mov bl, 0xf0
 .hang:
 jmp .hang
 
-times 218-($-$$) nop
+times 300-($-$$) nop
 
-TIMESTAMP dq 0 ;NOTE: Setting the timestamp in assembly is useless since we write to the disk at a later time. This field should be set after writing to a disk.
+read_sector: ;Reads the LBA sector stores in bx and copies it to cx
+xor dx, dx
+mov es, dx
+push cx
+
+;Now we read the disk
+mov ax, bx
+
+xor dx, dx
+div WORD [TRACK_SECTORS]
+add dl, 1
+mov cl, dl
+mov ax, bx
+
+xor dx, dx
+div WORD [TRACK_SECTORS]
+mov dx, 0
+div WORD [HEADS]
+mov dh, dl
+mov ch, al
+
+mov al, 1
+mov dl, BYTE [BOOT_DRIVE]
+pop bx
+mov ah, 0x02
+
+int 0x13
+
+;Fatal error on fail
+jc err
+
+cmp al, 1
+jne err
+
+ret
 
 times 434-($-$$) nop
 
 UID_1 dq 0x345 ;Unique disk ID (NOTE: We can't know for sure what the other disk IDs are at compile time so our best bet is to set this to some random number)
 UID_2 dd 0xf0
+
 
 PARTITION_TABLE:
 ;First Entry
@@ -131,7 +167,7 @@ dq 0
 dq 0 ;Unused partition
 dq 0
 
-;Fourth ENtry
+;Fourth Entry
 dq 0 ;Unused partition
 dq 0
 
