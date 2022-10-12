@@ -14,7 +14,7 @@ nop
 OEM db "ALEEMOS "
 SECTOR_BYTES dw 512
 CLUSTER_SECTORS db 1
-RESERVED_SECTORS dw 4
+RESERVED_SECTORS dw 1
 FATS db 2
 ROOT_ENTRIES dw 224 ;14 sectors
 SECTORS dw 0x0b3a
@@ -37,11 +37,18 @@ boot:
 
 mov BYTE [DRIVE_NO], dl
 mov WORD [PARTION_OFFSET], si
+mov WORD [TRACK_SECTORS], dx
+mov WORD [HEADS], cx
+
+mov ah, 0x0e
+mov bh, 0
+mov bl, 0xf0
+mov al, 'B'
+int 0x10
+
 jmp $
 
 PARTION_OFFSET dw 0
 
 times 510-($-$$) nop
 dw 0xaa55
-
-times 2048-($-$$) nop
