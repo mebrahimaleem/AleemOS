@@ -26,24 +26,24 @@ jmp 0:MBR ;Long jump to rest of MBR to ensure CS is set to 0
 MBR:
 sti
 mov BYTE [BOOT_DRIVE], dl
-.findActive: ;Find first active partion
-	mov bx, PARTION_TABLE
+.findActive: ;Find first active partition
+	mov bx, PARTITION_TABLE
 	mov cx, 4
 	.findLoop:
-		mov al, BYTE [bx] ;Get partion active flag
+		mov al, BYTE [bx] ;Get partition active flag
 		cmp al, 0x80
 		je .findExit
-		add bx, 0x10 ;Check next partion table entry
+		add bx, 0x10 ;Check next partition table entry
 		dec cx
 		cmp cx, 0
 		jne .findLoop
-		jmp err ;Jump tp MBR Fatal Error if no partion is active
+		jmp err ;Jump tp MBR Fatal Error if no partition is active
 	.findExit:
-		mov WORD [PARTION_OFFSET], bx ;Store partion table entry offset
+		mov WORD [PARTITION_OFFSET], bx ;Store partition table entry offset
 		add bx, 8
 	
-;Read VBR from partion
-mov ebx, DWORD [bx] ;Get LBA of partion
+;Read VBR from partition
+mov ebx, DWORD [bx] ;Get LBA of partition
 mov ax, bx
 
 xor dx, dx
@@ -76,12 +76,12 @@ jne err
 cmp WORD [0x7dfe], 0xaa55 ;Check if VBR has boot signature
 jne err
 ;Pass Partion table offset and boot drive to VBR
-mov si, WORD [PARTION_OFFSET]
+mov si, WORD [PARTITION_OFFSET]
 mov dl, BYTE [BOOT_DRIVE]
 jmp 0x7c00
 
 BOOT_DRIVE db 0
-PARTION_OFFSET dw 0
+PARTITION_OFFSET dw 0
 TRACK_SECTORS dw 18
 HEADS dw 2
 FATAL_ERR db "MBR: FATAL ERROR - PROGRAM SUSPENDED", 0
@@ -110,7 +110,7 @@ times 434-($-$$) nop
 UID_1 dq 0x345 ;Unique disk ID (NOTE: We can't know for sure what the other disk IDs are at compile time so our best bet is to set this to some random number)
 UID_2 dd 0xf0
 
-PARTION_TABLE:
+PARTITION_TABLE:
 ;First Entry
 db 0x80 ;Set to bootable
 db 0x00 ;Starting head
@@ -124,15 +124,15 @@ dd 0x01 ;Partion starting LBA
 dd 0x0b3e ;Number of sectors
 
 ;Second Entry
-dq 0 ;Unused partion
+dq 0 ;Unused partition
 dq 0
 
 ;Third Entry
-dq 0 ;Unused partion
+dq 0 ;Unused partition
 dq 0
 
 ;Fourth ENtry
-dq 0 ;Unused partion
+dq 0 ;Unused partition
 dq 0
 
 dw 0xaa55 ;Boot signature
