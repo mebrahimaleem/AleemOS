@@ -6,7 +6,7 @@
 
 db "BOOT    "
 db "BIN"
-db 0x20
+db 0x26
 db 0
 db 0
 dw 0
