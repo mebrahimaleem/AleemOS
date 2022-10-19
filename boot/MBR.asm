@@ -46,9 +46,11 @@ mov BYTE [BOOT_DRIVE], dl
 mov ebx, DWORD [bx] ;Get LBA of partition
 
 ;Get drive parameters in case OS was copied to another medium (non 1.44M floppy)
-pusha
+push bx
+
 mov ah, 8
 xor di, di
+mov dl, [BOOT_DRIVE]
 int 0x13
 jc err ;Fatal error on fail
 and cx, 0x3f
@@ -56,9 +58,11 @@ mov [TRACK_SECTORS], cx
 movzx dx, dh
 add dx, 1
 mov [HEADS], dx
-popa
 
+pop bx
 mov cx, 0x7c00
+xor dx, dx
+mov es, dx
 call read_sector
 
 ;Jump to VBR
@@ -104,27 +108,24 @@ jmp .hang
 
 times 300-($-$$) nop
 
-read_sector: ;Reads the LBA sector stores in bx and copies it to cx
-xor dx, dx
-mov es, dx
+read_sector: ;Reads the LBA sector stored in bx and copies it to es:cx
 push cx
 
-;Now we read the disk
+;Calculate LBA to CHS
 mov ax, bx
 
 xor dx, dx
-div WORD [TRACK_SECTORS]
-add dl, 1
+div word [TRACK_SECTORS]
+add dx, 1
 mov cl, dl
-mov ax, bx
 
-xor dx, dx
-div WORD [TRACK_SECTORS]
-mov dx, 0
-div WORD [HEADS]
+xor dx, dx 
+div word [HEADS]
 mov dh, dl
 mov ch, al
 
+
+;Read the disk using int 0x13
 mov al, 1
 mov dl, BYTE [BOOT_DRIVE]
 pop bx
