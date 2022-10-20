@@ -78,12 +78,26 @@ FAT1 equ 0x7E00
 ROOT_DIR equ 0x9000
 FSDATA equ 0x20 ;NOTE: not the start of the data area (in sectors), this is set such that cluster 2 is the start of the data area (since 0 and 1 are reserved)
 
+mov si, BOOT_FNAME
+mov cx, 0xAC00 ;Where to copy start of boot
+call findBoot
+
+mov dl, BYTE [DRIVE_NO]
+mov si, WORD [PARTION_OFFSET]
+mov dx, WORD [TRACK_SECTORS]
+mov cx, WORD [HEADS]
+jmp 0xAC00
+
+times 0x100-($-$$) nop
 ;We will now search the root directory for a file called BOOT with extension BIN
-findBoot:
+findBoot: ;Find the file pointed by si and copy it to cx
 	mov ax, ROOT_DIR
+	push cx
+	push si
 	.loop:
 		mov di, ax
-		mov si, BOOT_FNAME
+		pop si
+		push si
 		mov cx, 11
 		rep cmpsb
 		je readBoot
@@ -91,17 +105,18 @@ findBoot:
 		jmp .loop
 jmp $
 readBoot:
+	pop si
 	add ax, 26 ;Point to starting cluster
 	mov bx, ax
 	mov bx, word [bx] ;Get starting cluster
 	mov dx, bx
-	mov cx, 0xB000 ;Where to copy start of boot
+	pop cx
 	call readCluster ;Read cluster bx
 	
 	call findCluster ;Get the next cluster
 	.loop:
 		cmp bx, 0x0FFF ;Check if last cluster
-		je 0xB000 ;If so, go to boot
+		je bootjmp ;If so, go to boot
 		add cx, 512 ;Copy to next cluster
 
 		mov dx, bx
@@ -109,20 +124,23 @@ readBoot:
 		
 		call findCluster ;Get the next cluster
 		jmp .loop
-		
-		
+
+bootjmp:
+	ret
+				
 readCluster: ;Copies cluster bx to address es:cx
-	add bx, FSDATA
+	add bx, FSDATA ;Add data area offset
 	pusha
 	call MBR_READ_SECTOR
 	popa
 	ret
 
 findCluster: ;Gets a cluster from index dx and returns in bx
-	mov bx, dx
+	mov bx, dx ;save dx
 	and bx, 1
 	push bx ;If odd, bx is 1
 	
+	;Multiply dx by 1.5 (floored) and put it in ax
 	mov bx, 3
 	mov ax, dx
 	mul bx
@@ -130,12 +148,14 @@ findCluster: ;Gets a cluster from index dx and returns in bx
 	mov bx, 2
 	div bx
 		
+	;Add FAT offset to ax
 	add ax, FAT1
 	pop bx
 	cmp bx, 1
-	je .odd
+	je .odd ;If odd, we handle this differently
 
 	;Even
+	;This is is the simple situation, all we need is the first 1.5 bytes of the word pointed by ax
 	mov bx, ax
 	mov dx, [bx]
 	and dx, 0x0FFF
@@ -143,6 +163,7 @@ findCluster: ;Gets a cluster from index dx and returns in bx
 	ret
 
 	.odd:
+	;This is more complex, we need to add the values pointed by ax and ax+1 while masking out adjacent bytes (since we only want 1.5 bytes)
 	mov bx, ax
 	mov ax, [bx]
 	mov dx, [bx+1]
@@ -156,7 +177,7 @@ findCluster: ;Gets a cluster from index dx and returns in bx
 
 PARTION_OFFSET dw 0
 
-BOOT_FNAME db "BOOT    BIN"
+BOOT_FNAME db "BOOT    BIN" ;This is the name of the file we are searching for
 
-times 510-($-$$) nop
+times 510-($-$$) nop ;Pad out remaining sector
 dw 0xaa55

@@ -13,7 +13,7 @@ xor ax, ax
 mov ds, ax
 mov es, ax
 mov ss, ax
-mov sp, ax
+mov sp, bp
 
 ;Relocate MBR
 mov cx, 0x0100 ;Number of WORDs to copy
@@ -80,6 +80,13 @@ mov cx, [HEADS]
 ;Jump to VBR
 jmp 0x7c00
 
+check_err:
+dec di
+cmp di, 0
+je err
+jmp no_err
+
+FATAL_ERR db "FATAL ERROR - PROGRAM SUSPENDED - Please Restart Your Device", 0
 
 times 218-($-$$) nop
 
@@ -89,7 +96,6 @@ BOOT_DRIVE db 0
 PARTITION_OFFSET dw 0
 TRACK_SECTORS dw 18
 HEADS dw 2
-FATAL_ERR db "MBR: FATAL ERROR - PROGRAM SUSPENDED", 0
 
 err:
 mov si, FATAL_ERR
@@ -109,6 +115,10 @@ jmp .hang
 times 300-($-$$) nop
 
 read_sector: ;Reads the LBA sector stored in bx and copies it to es:cx
+push di
+mov di, 3
+
+no_err:
 push cx
 
 ;Calculate LBA to CHS
@@ -134,11 +144,12 @@ mov ah, 0x02
 int 0x13
 
 ;Fatal error on fail
-jc err
+jc check_err
 
 cmp al, 1
-jne err
+jne check_err
 
+pop di
 ret
 
 times 434-($-$$) nop

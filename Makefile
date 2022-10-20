@@ -8,8 +8,8 @@ build/os.img: build/boot.img build/fs.img
 build/boot.img: build/MBR.bin build/VBR.bin
 	@cat build/MBR.bin build/VBR.bin > build/boot.img
 
-build/fs.img: build/FAT.bin build/rdir.bin build/boot.bin
-	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin > build/fs.img
+build/fs.img: build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
+	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin > build/fs.img
 
 build/MBR.bin: boot/MBR.asm
 	nasm -f bin -o build/MBR.bin boot/MBR.asm
@@ -25,3 +25,16 @@ build/rdir.bin: boot/rdir.asm
 
 build/boot.bin: boot/boot.asm
 	nasm -f bin -o build/boot.bin boot/boot.asm
+
+build/kernel.bin: build/kentry.elf build/kernel.elf build/stdio.elf	
+	ld -melf_i386 -o build/kernel.bin -Ttext 0xb400 -Tdata 0x15FA00 -Tbss 0x13FA00 build/kentry.elf build/stdio.elf build/kernel.elf --oformat binary
+	truncate -s 4096 build/kernel.bin
+
+build/kentry.elf: kernel/kentry.asm
+	nasm -f elf -o build/kentry.elf kernel/kentry.asm
+
+build/kernel.elf: kernel/kernel.c
+	gcc -m32 -fno-pie -ffreestanding -c kernel/kernel.c -o build/kernel.elf
+
+build/stdio.elf: kernel/stdio.c
+	gcc -m32 -fno-pie -ffreestanding -c kernel/stdio.c -o build/stdio.elf
