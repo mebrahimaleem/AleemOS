@@ -7,7 +7,15 @@
 ;Bootloader has put us in 32-bit mode
 [BITS 32]
 
-mov BYTE [0xb8000], 'X'
+;Store important information
+[extern k_DRIVE_NO]
+[extern k_PARTITION_OFFSET]
+[extern k_TRACK_SECTORS]
+[extern k_HEADS]
+mov BYTE [k_DRIVE_NO], dl
+mov WORD [k_PARTITION_OFFSET], si
+mov WORD [k_TRACK_SECTORS], dx
+mov WORD [k_HEADS], cx
 
 [extern kernel]
 jmp kernel 

@@ -33,7 +33,7 @@ build/kernel.bin: build/kentry.elf build/kernel.elf build/stdio.elf
 build/kentry.elf: kernel/kentry.asm
 	nasm -f elf -o build/kentry.elf kernel/kentry.asm
 
-build/kernel.elf: kernel/kernel.c
+build/kernel.elf: kernel/kernel.c kernel/types.h kernel/stdio.h
 	gcc -m32 -fno-pie -ffreestanding -c kernel/kernel.c -o build/kernel.elf
 
 build/stdio.elf: kernel/stdio.c
