@@ -39,7 +39,7 @@ copyboot:
 
 mov BYTE [DRIVE_NO], dl
 mov WORD [PARTION_OFFSET], si
-mov WORD [TRACK_SECTORS], dx
+mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
 ;First we copy FAT1 onto the RAM
@@ -84,7 +84,7 @@ call findBoot
 
 mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
-mov dx, WORD [TRACK_SECTORS]
+mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
 jmp 0xAC00
 

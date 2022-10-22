@@ -74,7 +74,7 @@ mov si, WORD [PARTITION_OFFSET]
 mov dl, BYTE [BOOT_DRIVE]
 
 ;Pass drive parameters
-mov dx, [TRACK_SECTORS]
+mov bx, [TRACK_SECTORS]
 mov cx, [HEADS]
 
 ;Jump to VBR

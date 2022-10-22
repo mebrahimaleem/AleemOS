@@ -12,7 +12,7 @@ VBR_READ_FILE equ 0x7d00 ;This is the memory location of the VBR readBoot routin
 ;Save drive parameters, boot drive, and partion offset
 mov BYTE [DRIVE_NO], dl
 mov WORD [PARTION_OFFSET], si
-mov WORD [TRACK_SECTORS], dx
+mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
 ;Set the VGA video mode
@@ -58,19 +58,32 @@ mov gs, ax
 mov ebp, 0x9fa00
 mov esp, ebp
 
-;NOTE: We can't set the LDT just yet because we need an IDT first (otherwise CPU will triple fault)
-
 ;Load the IDT descripter
 lidt [IDT_ptr]
 
+xor ebx, ebx
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
 
 ;Pass information to kernel
 mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
-mov dx, WORD [TRACK_SECTORS]
+mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
 
+mov DWORD [KTRCKPS], ebx
+mov DWORD [KHEADS], ecx
+mov DWORD [KBOOTNO], edx
+mov DWORD [KPARTI], esi
+
 ;jump to kernel
+
+KTSS_EIP:
+nop
+mov ax, KTSS_SEG
+ltr ax
+
 jmp 0xB400
 
 ;Bootloader print routine - prints a null terminated string pointed by si. Modifies si
@@ -102,18 +115,14 @@ BOOT_START_STR db "AleemOS - Please Wait", 0x0D, 0x0A, 0x00
 
 KERNEL_FNAME db "KERNEL  BIN"
 
-;We will put the GDT & IDT in the 4th sector of the bootloader
-times 0x600-($-$$) nop
-
 ;IDT
-;All IDT entires need to be tied to an interupt handler (which will be implemented by the kernel) so we will just leave the IDT blank for now
-;The IDT will contain 34 entries (each 8 bytes long)
+;The IDT will contain 56 entries (each 8 bytes long)
 IDT_start:
-times 40 dq 0
+times 56 dq 0
 IDT_end:
 
 ;GDT
-;The GDT will contain 3 entries (1 null, 1 code, 1 data)
+;The GDT will contain 10 entries
 GDT_start:
 	GDT_null:
 		dq 0
@@ -131,7 +140,66 @@ GDT_start:
 		db 10010010b
 		db 11001111b
 		db 0x00
+	GDT_KTSS:
+		dw 104
+		dw TSS_start ;NOTE: The TSS is located within the first 0xFFFF bytes, hence all base bits above 15 should be 0
+		db 0x00
+		db 0b10001001
+		db 0b01000000
+		db 0x00
+	GDT_UTSS:
+		dq 0
+	GDT_UCod:
+		dq 0
+	GDT_UDat:
+		dq 0
+	GDT_r0LD:
+		dq 0
+	GDT_r1LD:
+		dq 0
+	GDT_r2LD:
+		dq 0
 	GDT_end:
+
+TSS_start:
+	dw KTSS_SEG 	;Link
+	dw 0x0000			;Reserved
+	dd 0x9fa00		;ESP 0
+	dw DATA_SEG		;SS 0
+	dw 0x0000			;Reserved
+	dd 0x7c00			;ESP 1
+	dw DATA_SEG		;SS 1
+	dw 0x0000			;Reserved
+	dd 0x7c00			;ESP 2
+	dw UDAT_SEG		;SS 2
+	dw 0x0000			;Reserved
+	dd 0x0000			;CR3
+	dd KTSS_EIP		;EIP
+	dd 0x46				;EFLAGS
+	dd 0x0000			;EAX
+KHEADS	dd 0x0	;ECX NOTE:Must be set at runtime
+KBOOTNO	dd 0x0	;EDX NOTE:Must be set at runtine
+KTRCKPS	dd 0x0	;EBX NOTE:Must be set at runtime
+	dd 0x9fa00		;ESP
+	dd 0x9fa00		;EBP
+KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
+	dd 0x0				;EDI
+	dw DATA_SEG		;ES
+	dw 0x0				;Reserved
+	dw CODE_SEG		;CS
+	dw 0x0				;Reserved
+	dw DATA_SEG		;SS
+	dw 0x0				;Reserved
+	dw DATA_SEG		;DS
+	dw 0x0				;Reserved
+	dw DATA_SEG		;FS
+	dw 0x0				;Reserved
+	dw DATA_SEG		;GS
+	dw 0x0				;Reserved
+	dw R0LD_SEG		;LDT Segment Descriptor
+	dw 0x0				;Reserved
+	dw 0x0				;Reserved + T
+	dw IDT_end - IDT_start ;NO IOPB
 
 IDT_ptr: ;This is the descriptor for the IDT
 	dw IDT_end - IDT_start -1 ;Size - 1
@@ -144,6 +212,13 @@ GDT_ptr: ;This is the descriptor for the GDT
 ;Some useful constants
 CODE_SEG equ GDT_code - GDT_start
 DATA_SEG equ GDT_data - GDT_start
+KTSS_SEG equ GDT_KTSS - GDT_start
+UTSS_SEG equ GDT_UTSS - GDT_start
+UCOD_SEG equ GDT_UCod - GDT_start
+UDAT_SEG equ GDT_UDat - GDT_start
+R0LD_SEG equ GDT_r0LD - GDT_start
+R1LD_SEG equ GDT_r1LD - GDT_start
+R2LD_SEG equ GDT_r2LD - GDT_start
 
 ;Pad out so that BOOT.BIN takes up 4 sectors
 times 0x800-($-$$) nop
