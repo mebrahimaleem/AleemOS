@@ -72,6 +72,7 @@ mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
 
+;Make sure we correctly set our TSS
 mov DWORD [KTRCKPS], ebx
 mov DWORD [KHEADS], ecx
 mov DWORD [KBOOTNO], edx
@@ -79,12 +80,25 @@ mov DWORD [KPARTI], esi
 
 ;jump to kernel
 
-KTSS_EIP:
+KTSS_EIP: ;Our EIP for the TSS
 nop
-mov ax, KTSS_SEG
+mov ax, KTSS_SEG ;Set the TSS
 ltr ax
 
-jmp 0xB400
+;Set the LDT
+mov ax, R0LD_SEG
+lldt ax
+
+;Set segments
+mov ax, L0DT_SEG
+mov ds, ax
+mov ss, ax
+mov es, ax
+mov fs, ax
+mov gs, ax
+
+;Far jump to kernel
+jmp L0CD_SEG:0xB400
 
 ;Bootloader print routine - prints a null terminated string pointed by si. Modifies si
 print:
@@ -141,8 +155,8 @@ GDT_start:
 		db 11001111b
 		db 0x00
 	GDT_KTSS:
-		dw 104
-		dw TSS_start ;NOTE: The TSS is located within the first 0xFFFF bytes, hence all base bits above 15 should be 0
+		dw KTSS_end - KTSS_start - 1
+		dw KTSS_start ;NOTE: The TSS is located within the first 0xFFFF bytes, hence all base bits above 15 should be 0
 		db 0x00
 		db 0b10001001
 		db 0b01000000
@@ -154,14 +168,39 @@ GDT_start:
 	GDT_UDat:
 		dq 0
 	GDT_r0LD:
-		dq 0
+		dw R0LDT_end - R0LDT_start - 1
+		dw R0LDT_start
+		db 0x00
+		db 0b10000010
+		db 0b00000000
+		db 0x00		
 	GDT_r1LD:
 		dq 0
 	GDT_r2LD:
 		dq 0
 	GDT_end:
 
-TSS_start:
+R0LDT_start: ;Our kernels LDT, has 3 entries
+	R0LDT_null:
+		dq 0
+	R0LDT_code:
+		dw 0xFFFF			;Limit 0-16
+		dw 0x0000			;Base 0-16
+		db 0x00				;Base 16-24
+		db 10011010b	;Flags + Type
+		db 11001111b	;Flags + Limit 16-20
+		db 0x00				;Base 24-32
+	R0LDT_data:
+		dw 0xFFFF
+		dw 0x0000
+		db 0x00
+		db 10010010b
+		db 11001111b
+		db 0x00
+R0LDT_end:
+
+
+KTSS_start:
 	dw KTSS_SEG 	;Link
 	dw 0x0000			;Reserved
 	dd 0x9fa00		;ESP 0
@@ -196,10 +235,11 @@ KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
 	dw 0x0				;Reserved
 	dw DATA_SEG		;GS
 	dw 0x0				;Reserved
-	dw R0LD_SEG		;LDT Segment Descriptor
+	dw (R0LD_SEG/8)<<3;LDT Segment Descriptor
 	dw 0x0				;Reserved
 	dw 0x0				;Reserved + T
 	dw IDT_end - IDT_start ;NO IOPB
+KTSS_end:
 
 IDT_ptr: ;This is the descriptor for the IDT
 	dw IDT_end - IDT_start -1 ;Size - 1
@@ -219,6 +259,9 @@ UDAT_SEG equ GDT_UDat - GDT_start
 R0LD_SEG equ GDT_r0LD - GDT_start
 R1LD_SEG equ GDT_r1LD - GDT_start
 R2LD_SEG equ GDT_r2LD - GDT_start
+
+L0CD_SEG equ R0LDT_code - R0LDT_start
+L0DT_SEG equ R0LDT_data - R0LDT_start
 
 ;Pad out so that BOOT.BIN takes up 4 sectors
 times 0x800-($-$$) nop
