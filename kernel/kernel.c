@@ -15,6 +15,7 @@ uint16_t k_TRACK_SECTORS;
 uint16_t k_HEADS;
 
 void kernel(void){
-	put('X', 1, 1);
+	char* loading_msg = "Loading ...";
+	for (char* i = loading_msg; *i != 0; i++) put(*i, i-loading_msg, 1, 0x0F);
 	while (1);
 }
