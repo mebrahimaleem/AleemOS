@@ -26,15 +26,18 @@ build/rdir.bin: boot/rdir.asm
 build/boot.bin: boot/boot.asm
 	nasm -f bin -o build/boot.bin boot/boot.asm
 
-build/kernel.bin: build/kentry.elf build/kernel.elf build/basicio.elf
-	ld -melf_i386 -o build/kernel.bin -Ttext 0xb400 -Tdata 0x15FA00 -Tbss 0x13FA00 build/kentry.elf build/basicio.elf build/interupts.elf build/kernel.elf --oformat binary
+build/kernel.bin: build/kentry.elf build/kernel.elf build/basicio.elf build/portio.elf
+	ld -melf_i386 -o build/kernel.bin -Ttext 0xb400 -Tdata 0x15FA00 -Tbss 0x13FA00 build/kentry.elf build/basicio.elf build/portio.elf build/kernel.elf --oformat binary
 	truncate -s 4096 build/kernel.bin
 
 build/kentry.elf: kernel/kentry.asm
 	nasm -f elf -o build/kentry.elf kernel/kentry.asm
 
-build/kernel.elf: kernel/kernel.c kernel/basicio.h
-	gcc -m32 -fno-pie -ffreestanding -c kernel/kernel.c -o build/kernel.elf
+build/kernel.elf: kernel/kernel.c kernel/basicio.h kernel/portio.h
+	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/kernel.c -o build/kernel.elf
 
 build/basicio.elf: kernel/basicio.c
-	gcc -m32 -fno-pie -ffreestanding -c kernel/basicio.c -o build/basicio.elf
+	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/basicio.c -o build/basicio.elf
+
+build/portio.elf: kernel/portio.c
+	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/portio.c -o build/portio.elf
