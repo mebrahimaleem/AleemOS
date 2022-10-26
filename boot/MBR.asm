@@ -7,37 +7,39 @@
 [ORG 0x600] ;The MBR will relocate itself to 0x600
 
 ;Setup segments & stack
-cli
-mov bp, 0x7a00
+cli ;Disable interupts while we modify the stack
+mov bp, 0x7a00 ;Stack base pointer
 xor ax, ax
-mov ds, ax
-mov es, ax
-mov ss, ax
-mov sp, bp
+mov ds, ax ;Data segment
+mov es, ax ;Extra segment
+mov ss, ax ;Stack segment
+mov sp, bp ;Stack pointer
 
 ;Relocate MBR
 mov cx, 0x0100 ;Number of WORDs to copy
 mov si, 0x7c00 ;copy source
 mov di, 0x0600 ;copy destination
-rep movsw
+rep movsw ;Copy MBR
 
 jmp 0:MBR ;Long jump to rest of MBR to ensure CS is set to 0
 
 MBR:
-sti
-mov BYTE [BOOT_DRIVE], dl
+sti ;Restore interupts
+mov BYTE [BOOT_DRIVE], dl ;Store boot drove
 .findActive: ;Find first active partition
-	mov bx, PARTITION_TABLE
-	mov cx, 4
+	;The algorithm: Store the current parition table entry in bx, then see if the parition active flag is set, if so this is the paritition to use
+	mov bx, PARTITION_TABLE ;First partition table entry
+	mov cx, 4 ;Number of partition table entries
 	.findLoop:
 		mov al, BYTE [bx] ;Get partition active flag
 		cmp al, 0x80
-		je .findExit
+		je .findExit ;If we found the partition then move on
 		add bx, 0x10 ;Check next partition table entry
-		dec cx
-		cmp cx, 0
+		dec cx ;Decrease entries left
+		cmp cx, 0 ;Check if no more entries
 		jne .findLoop
-		jmp err ;Jump tp MBR Fatal Error if no partition is active
+		mov si, BAD_DISK_ERR
+		jmp err ;Jump to MBR, Fatal Error if no partition is active
 	.findExit:
 		mov WORD [PARTITION_OFFSET], bx ;Store partition table entry offset
 		add bx, 8
@@ -52,21 +54,23 @@ mov ah, 8
 xor di, di
 mov dl, [BOOT_DRIVE]
 int 0x13
+mov si, DISK_ERR ;If we can't get drive parameters then fatal error
 jc err ;Fatal error on fail
 and cx, 0x3f
-mov [TRACK_SECTORS], cx
+mov [TRACK_SECTORS], cx ;Store sectors per track
 movzx dx, dh
 add dx, 1
-mov [HEADS], dx
+mov [HEADS], dx ;Store heads
 
-pop bx
-mov cx, 0x7c00
+pop bx ;LBA to read
+mov cx, 0x7c00 ;Destination
 xor dx, dx
 mov es, dx
 call read_sector
 
 ;Jump to VBR
 cmp WORD [0x7dfe], 0xaa55 ;Check if VBR has boot signature
+mov si, BAD_DISK_ERR
 jne err
 
 ;Pass Partition table offset and boot drive to VBR
@@ -80,25 +84,21 @@ mov cx, [HEADS]
 ;Jump to VBR
 jmp 0x7c00
 
-check_err:
+check_err: ;Check if we should try reading the disk again
 dec di
 cmp di, 0
+mov si, DISK_ERR
 je err
 jmp no_err
 
-FATAL_ERR db "FATAL ERROR - PROGRAM SUSPENDED - Please Restart Your Device", 0
 
+DISK_ERR db "FATAL: DISK FAIL - Please Restart Your Device", 0
 times 218-($-$$) nop
 
 TIMESTAMP dq 0 ;NOTE: Setting the timestamp in assembly is useless since we write to the disk at a later time. This field should be set after writing to a disk.
 
-BOOT_DRIVE db 0
-PARTITION_OFFSET dw 0
-TRACK_SECTORS dw 18
-HEADS dw 2
-
-err:
-mov si, FATAL_ERR
+;Memory address 218 + 8 + 0x600 = 0x600 + 226
+err: ;Handle MBR error
 mov ah, 0x0e
 mov bh, 0
 mov bl, 0xf0
@@ -111,6 +111,13 @@ mov bl, 0xf0
 	jmp .print
 .hang:
 jmp .hang
+
+BOOT_DRIVE db 0
+PARTITION_OFFSET dw 0
+TRACK_SECTORS dw 18
+HEADS dw 2
+
+BAD_DISK_ERR db "FATAL: BAD DISK - Get new copy of OS", 0
 
 times 300-($-$$) nop
 
