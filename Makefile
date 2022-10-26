@@ -1,46 +1,57 @@
+CWARN := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs -Winline -Wno-long-long -Wconversion -Wstrict-prototypes
+
+#CWARN_IGN := -Wcast-align
+
+CFLAGS := $(CWARN) -masm=intel -m32 -fno-pie -ffreestanding -c
+
+CC := gcc
+
+B_NASM := nasm -f bin
+E_NASM := nasm -f elf
+
+LD := ld
+LDFLAGS := -melf_i386 -T link.ld
+
+BOOT_RECORDS := build/MBR.bin build/VBR.bin
+
+BOOT_ASM := $(shell find boot/ -type f -name "*.asm")
+KERNEL_SRC := $(shell find kernel/ -type f -name "*.c")
+DRIVERS_SRC := $(shell find drivers/ -type f -name "*.c")
+
+FLAT_BIN := $(patsubst boot/%.asm,build/%.bin,$(BOOT_ASM))
+KERNEL_OBJ := $(patsubst kernel/%.c,build/%.elf,$(KERNEL_SRC))
+DRIVERS_OBJ := $(patsubst drivers/%.c,build/%.elf,$(DRIVERS_SRC))
+
+.PHONY: all
+all: os
+
+.PHONY: os
 os: build/os.img
+	@echo "Done Building OS!"
+
+build/os.img: build/BR.img build/FS.img
+	@cat build/BR.img build/FS.img > build/os.img
 	@truncate -s 1440000 build/os.img
-	@echo Done Building OS
 
-build/os.img: build/boot.img build/fs.img
-	@cat build/boot.img build/fs.img > build/os.img
+build/BR.img: $(BOOT_RECORDS)
+	@cat $(BOOT_RECORDS) > $@
 
-build/boot.img: build/MBR.bin build/VBR.bin
-	@cat build/MBR.bin build/VBR.bin > build/boot.img
+build/FS.img: build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
+	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin > build/FS.img
 
-build/fs.img: build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
-	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin > build/fs.img
+$(FLAT_BIN): build/%.bin: boot/%.asm
+	@$(B_NASM) -o $@ $<
 
-build/MBR.bin: boot/MBR.asm
-	nasm -f bin -o build/MBR.bin boot/MBR.asm
-
-build/VBR.bin: boot/VBR.asm
-	nasm -f bin -o build/VBR.bin boot/VBR.asm
-
-build/FAT.bin: boot/FAT.asm
-	nasm -f bin -o build/FAT.bin boot/FAT.asm
-
-build/rdir.bin: boot/rdir.asm
-	nasm -f bin -o build/rdir.bin boot/rdir.asm
-
-build/boot.bin: boot/boot.asm
-	nasm -f bin -o build/boot.bin boot/boot.asm
-
-build/kernel.bin: build/kentry.elf build/kernel.elf build/basicio.elf build/portio.elf build/memory.elf
-	ld -melf_i386 -T link.ld
-	truncate -s 4096 build/kernel.bin
+build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ)
+	@$(LD) $(LDFLAGS)
+	@truncate -s 4096 build/kernel.bin
 
 build/kentry.elf: kernel/kentry.asm
-	nasm -f elf -o build/kentry.elf kernel/kentry.asm
+	@$(E_NASM) -o $@ $<
 
-build/kernel.elf: kernel/kernel.c kernel/basicio.h kernel/portio.h kernel/memory.h
-	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/kernel.c -o build/kernel.elf
+$(KERNEL_OBJ): build/%.elf: kernel/%.c
+	@$(CC) $(CFLAGS) $< -o $@
 
-build/basicio.elf: kernel/basicio.c
-	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/basicio.c -o build/basicio.elf
-
-build/portio.elf: kernel/portio.c
-	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/portio.c -o build/portio.elf
-
-build/memory.elf: kernel/memory.c
-	gcc -masm=intel -m32 -fno-pie -ffreestanding -c kernel/memory.c -o build/memory.elf
+$(DRIVERS_OBJ): build/%.elf: drivers/%.c
+	@$(CC) $(CFLAGS) $< -o $@
