@@ -246,6 +246,9 @@ BOOT_START_STR db "AleemOS - Please Wait", 0x0D, 0x0A, 0x00
 
 KERNEL_FNAME db "KERNEL  BIN"
 
+;NOTE: 	The remaining code defines the various system datastructures that are used in protected mode. Most OS implementations do this in the kernel, but in order
+				;to call the kernel in protected mode, we will declare these in the bootloader and the kernel can access them later (using sgdt sidt, Etc.)
+
 ;IDT
 ;The IDT will contain 56 entries (each 8 bytes long)
 ;This IDT is for ring 0 interupts, the kernel will establish an IDT for rings 1 and 2
@@ -521,7 +524,8 @@ mov si, ISR1E_S
 call pm_print
 jmp $
 
-;For now, we will ignore all IRQs TODO:Implement proper handling of IRQs
+;For now, we will ignore all IRQs NOTE:	Several IRQs can be ignored until we switch to rings 1 and 2 (ex: the kernel does not need to know what keys the user
+																			;	presses, it only needs to give it to other applications, which will be implemented in the ring 1/2 IDT's ISRs.
 
 ISR_20:
 mov al, 0x20
@@ -529,6 +533,8 @@ out PIC1_CMD, al
 iret
 
 ISR_21:
+in al, 0x60 ;Get keyscan to keep keyboard buffer clean
+
 mov al, 0x20
 out PIC1_CMD, al
 iret
@@ -629,61 +635,59 @@ out PIC1_CMD, al
 iret
 
 ;GDT
-;The GDT will contain 10 entries
+;The GDT will contain 9 entries
 GDT_start:
-	GDT_null:
+	GDT_null: ;NULL descriptor
 		dq 0
-	GDT_code:
+	GDT_code: ;Ring 0 code descriptor
 		dw 0xFFFF			;Limit 0-16
 		dw 0x0000			;Base 0-16
 		db 0x00				;Base 16-24
 		db 10011010b	;Flags + Type
 		db 11001111b	;Flags + Limit 16-20
 		db 0x00				;Base 24-32
-	GDT_data:
+	GDT_data: ;Ring 0 data descriptor
 		dw 0xFFFF
 		dw 0x0000
 		db 0x00
 		db 10010010b
 		db 11001111b
 		db 0x00
-	GDT_KTSS:
+	GDT_KTSS: ;Kernel task descriptor
 		dw KTSS_end - KTSS_start - 1
 		dw KTSS_start ;NOTE: The TSS is located within the first 0xFFFF bytes, hence all base bits above 15 should be 0
 		db 0x00
 		db 0b10001001
 		db 0b01000000
 		db 0x00
-	GDT_UTSS:
+	GDT_UTSS: ;Ring 2 task descriptor
 		dq 0
-	GDT_UCod:
+	GDT_UCod: ;Ring 2 code descriptor
 		dq 0
-	GDT_UDat:
+	GDT_UDat: ;Ring 2 data descriptor
 		dq 0
-	GDT_r0LD:
+	GDT_r0LD: ;Ring 0 LDT descriptor
 		dw R0LDT_end - R0LDT_start - 1
 		dw R0LDT_start
 		db 0x00
 		db 0b10000010
 		db 0b00000000
 		db 0x00		
-	GDT_r1LD:
-		dq 0
-	GDT_r2LD:
+	GDT_r2LD: ;Ring 2 LDT descriptor
 		dq 0
 	GDT_end:
 
 R0LDT_start: ;Our kernels LDT, has 3 entries
-	R0LDT_null:
+	R0LDT_null: ;Ring 0 LDT Null descriptor
 		dq 0
-	R0LDT_code:
+	R0LDT_code: ;Ring 0 LDT code descriptor
 		dw 0xFFFF			;Limit 0-16
 		dw 0x0000			;Base 0-16
 		db 0x00				;Base 16-24
 		db 10011010b	;Flags + Type
 		db 11001111b	;Flags + Limit 16-20
 		db 0x00				;Base 24-32
-	R0LDT_data:
+	R0LDT_data: ;Ring 0 LDT data descriptor
 		dw 0xFFFF
 		dw 0x0000
 		db 0x00
@@ -693,7 +697,7 @@ R0LDT_start: ;Our kernels LDT, has 3 entries
 R0LDT_end:
 
 
-KTSS_start:
+KTSS_start: ;Kernel Task Segment State
 	dw KTSS_SEG 	;Link
 	dw 0x0000			;Reserved
 	dd 0x9fa00		;ESP 0
@@ -715,7 +719,7 @@ KTRCKPS	dd 0x0	;EBX NOTE:Must be set at runtime
 	dd 0x9fa00		;ESP
 	dd 0x9fa00		;EBP
 KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
-	dd 0x0				;EDI
+	dd 0					;EDI
 	dw L0DT_SEG		;ES
 	dw 0x0				;Reserved
 	dw L0CD_SEG		;CS
@@ -750,7 +754,6 @@ UTSS_SEG equ GDT_UTSS - GDT_start
 UCOD_SEG equ GDT_UCod - GDT_start
 UDAT_SEG equ GDT_UDat - GDT_start
 R0LD_SEG equ GDT_r0LD - GDT_start
-R1LD_SEG equ GDT_r1LD - GDT_start
 R2LD_SEG equ GDT_r2LD - GDT_start
 
 L0CD_SEG equ R0LDT_code - R0LDT_start
