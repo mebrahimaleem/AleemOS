@@ -2,8 +2,8 @@
 //
 //This file has declarations for all Heap operations
 
-extern void initHeap();
+extern void initHeap(void);
 
-extern volatile void* volatile malloc(volatile uint32_t size);
+extern void* malloc(volatile uint32_t size);
 
 extern void free(volatile void* volatile block);

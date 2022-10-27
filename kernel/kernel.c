@@ -16,11 +16,13 @@ uint16_t k_PARTITION_OFFSET;
 uint16_t k_TRACK_SECTORS;
 uint16_t k_HEADS;
 
+void kernel(void);
+
 void kernel(void){
 	initHeap();
 
-	volatile uint8_t* volatile loading_msg = "Loading ...";
-	for(volatile uint8_t* volatile i = loading_msg; *i != 0; i++) put(*i, i-loading_msg, 1, 0x0F);
+	volatile const char* volatile loading_msg = "Loading ...";
+	for(volatile const char* volatile i = loading_msg; *i != 0; i++) put(*i, (uint8_t)(i-loading_msg), 1, 0x0F);
 	
 hang:
 	asm volatile ("hlt");

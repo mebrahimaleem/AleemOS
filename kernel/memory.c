@@ -14,12 +14,12 @@ typedef struct BlockDescriptor {
 
 volatile BlockDescriptor* volatile HeapBase = (BlockDescriptor*)0x100000;
 
-extern inline void initHeap(){
+extern inline void initHeap(void){
 	HeapBase->flags = 0;
 	return;
 }
 
-extern inline volatile void* volatile malloc(volatile uint32_t size){
+extern inline void* malloc(volatile uint32_t size){
 	volatile BlockDescriptor* volatile block = HeapBase;
 	while (1){
 		if (block->flags == 0){
