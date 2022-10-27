@@ -30,12 +30,21 @@ all: os
 os: build/os.img
 	@echo "Done Building OS!"
 
-build/os.img: build/MBR.bin build/VBR.bin build/FS.img
-	@cat build/MBR.bin build/VBR.bin build/FS.img > build/os.img
+build/os.img: build/MBR.bin build/FS.img
+	@cat build/MBR.bin build/FS.img > build/os.img
 	@truncate -s 1440000 build/os.img
 
-build/FS.img: build/VBR.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
-	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin > build/FS.img
+build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin
+	@cat build/VBR.bin > build/FS.img
+	@truncate -s 1440000 build/FS.img
+	@losetup -D
+	@losetup -o 0 /dev/loop0 build/FS.img
+	@mount /dev/loop0 mnt
+	@cp build/boot.bin mnt/BOOT.BIN
+	@cp build/kernel.bin mnt/KERNEL.BIN
+	@umount mnt
+	@dd if=/dev/loop0 seek=512 of=build/FS.img
+	@losetup -d /dev/loop0
 
 $(FLAT_BIN): build/%.bin: boot/%.asm
 	@$(B_NASM) -o $@ $<
