@@ -30,14 +30,11 @@ all: os
 os: build/os.img
 	@echo "Done Building OS!"
 
-build/os.img: build/BR.img build/FS.img
-	@cat build/BR.img build/FS.img > build/os.img
+build/os.img: build/MBR.bin build/VBR.bin build/FS.img
+	@cat build/MBR.bin build/VBR.bin build/FS.img > build/os.img
 	@truncate -s 1440000 build/os.img
 
-build/BR.img: $(BOOT_RECORDS)
-	@cat $(BOOT_RECORDS) > $@
-
-build/FS.img: build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
+build/FS.img: build/VBR.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin
 	@cat build/FAT.bin build/FAT.bin build/rdir.bin build/boot.bin build/kernel.bin > build/FS.img
 
 $(FLAT_BIN): build/%.bin: boot/%.asm
