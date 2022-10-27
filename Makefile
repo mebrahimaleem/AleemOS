@@ -18,6 +18,8 @@ BOOT_RECORDS := build/MBR.bin build/VBR.bin
 BOOT_ASM := $(shell find boot/ -type f -name "*.asm")
 KERNEL_SRC := $(shell find kernel/ -type f -name "*.c")
 DRIVERS_SRC := $(shell find drivers/ -type f -name "*.c")
+KERNEL_HEAD := $(shell find kernel/ -type f -name "*.h")
+DRIVERS_HEAD := $(shell find drivers/ -type f -name "*.h")
 
 FLAT_BIN := $(patsubst boot/%.asm,build/%.bin,$(BOOT_ASM))
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.elf,$(KERNEL_SRC))
@@ -55,6 +57,9 @@ build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ)
 
 build/kentry.elf: kernel/kentry.asm
 	@$(E_NASM) -o $@ $<
+
+build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD)
+	@$(CC) $(CFLAGS) $< -o $@
 
 $(KERNEL_OBJ): build/%.elf: kernel/%.c
 	@$(CC) $(CFLAGS) $< -o $@
