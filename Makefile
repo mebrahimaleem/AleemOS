@@ -53,12 +53,11 @@ $(FLAT_BIN): build/%.bin: boot/%.asm
 
 build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ)
 	@$(LD) $(LDFLAGS)
-	@truncate -s 4096 build/kernel.bin
 
 build/kentry.elf: kernel/kentry.asm
 	@$(E_NASM) -o $@ $<
 
-build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD)
+build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD) link.ld
 	@$(CC) $(CFLAGS) $< -o $@
 
 $(KERNEL_OBJ): build/%.elf: kernel/%.c
