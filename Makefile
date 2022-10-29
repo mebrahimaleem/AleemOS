@@ -26,17 +26,17 @@ KERNEL_OBJ := $(patsubst kernel/%.c,build/%.elf,$(KERNEL_SRC))
 DRIVERS_OBJ := $(patsubst drivers/%.c,build/%.elf,$(DRIVERS_SRC))
 
 .PHONY: all
-all: os
+all: os Makefile
 
 .PHONY: os
-os: build/os.img
+os: build/os.img Makefile
 	@echo "Done Building OS!"
 
-build/os.img: build/MBR.bin build/FS.img
+build/os.img: build/MBR.bin build/FS.img Makefile
 	@cat build/MBR.bin build/FS.img > build/os.img
 	@truncate -s 1440000 build/os.img
 
-build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin
+build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin Makefile
 	@cat build/VBR.bin > build/FS.img
 	@truncate -s 1440000 build/FS.img
 	@losetup -D
@@ -44,24 +44,26 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin
 	@mount /dev/loop0 mnt
 	@cp build/boot.bin mnt/BOOT.BIN
 	@cp build/kernel.bin mnt/KERNEL.BIN
+	@fatattr +rhs mnt/BOOT.BIN
+	@fatattr +rhs mnt/KERNEL.BIN
 	@umount mnt
 	@dd if=/dev/loop0 seek=512 of=build/FS.img
 	@losetup -d /dev/loop0
 
-$(FLAT_BIN): build/%.bin: boot/%.asm
+$(FLAT_BIN): build/%.bin: boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
 
-build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ)
+build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ) Makefile
 	@$(LD) $(LDFLAGS)
 
-build/kentry.elf: kernel/kentry.asm
+build/kentry.elf: kernel/kentry.asm Makefile
 	@$(E_NASM) -o $@ $<
 
-build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD) link.ld
+build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD) link.ld Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(KERNEL_OBJ): build/%.elf: kernel/%.c
+$(KERNEL_OBJ): build/%.elf: kernel/%.c Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(DRIVERS_OBJ): build/%.elf: drivers/%.c
+$(DRIVERS_OBJ): build/%.elf: drivers/%.c Makefile
 	@$(CC) $(CFLAGS) $< -o $@
