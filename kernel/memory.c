@@ -11,7 +11,7 @@
 typedef struct BlockDescriptor {
 	uint32_t size : 30; //Size of block
 	uint32_t flags : 2; //0 = Last descriptor, 1 = Used, 2 = free
-} BlockDescriptor; //TODO: make packed
+} __attribute((packed)) BlockDescriptor;
 
 volatile BlockDescriptor* volatile HeapBase = (BlockDescriptor*)0x100000;
 
