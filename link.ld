@@ -15,7 +15,7 @@ INPUT
 OUTPUT(build/kernel.bin)
 
 SECTIONS {
-	. = 0xb400;
+	. = 0xc000;
 	.text : {
 		*(.text)
 	}

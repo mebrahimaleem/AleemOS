@@ -25,15 +25,34 @@ mov ah, 0x01
 mov cx, 0x2607
 int 0x10
 
-;Notify user to please wait
-mov si, BOOT_START_STR
-call real_print
-
 ;Now we need to copy the kernel onto the RAM
 mov si, KERNEL_FNAME ;file to copy
-mov cx, 0xB400 ;Where to copy kernel
+mov cx, 0xC000 ;Where to copy kernel
 call VBR_READ_FILE
 
+;Now we need the memory map
+get_mmap:
+xor ebx, ebx
+mov di, ARDS
+mov ecx, 20
+mov si, 16
+
+.loop:
+mov eax, 0xe820
+mov edx, 0x534D4150
+int 0x15
+
+jc prepare_pm ;Check for error
+
+add di, 20 ;Next range
+dec si
+cmp si, 0
+je prepare_pm
+
+cmp ebx, 0
+jne .loop
+
+prepare_pm:
 ;Now we need to enter PM
 cli ;We will disable interupts until the kernel has correctly set up the IDT
 lgdt [GDT_ptr] ;Load the GDT descriptor
@@ -42,6 +61,9 @@ mov eax, cr0 ;Set the PM bit
 or eax, 0x01
 mov cr0, eax
 jmp CODE_SEG:enter_pm ;Far jump to 32-bit (to set CS)
+
+;Address Range Descriptor Structure
+ARDS times 16*20 db 0xff
 
 ;We are now in 32-bit mode (but we stil need to set the segments registers)
 [BITS 32]
@@ -162,12 +184,14 @@ mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
+mov di, ARDS
 
 ;Make sure we correctly set our TSS
 mov DWORD [KTRCKPS], ebx
 mov DWORD [KHEADS], ecx
 mov DWORD [KBOOTNO], edx
 mov DWORD [KPARTI], esi
+mov DWORD [KDATA], edi
 
 ;jump to kernel
 
@@ -191,7 +215,7 @@ mov ax, KTSS_SEG ;Set the TSS
 ltr ax
 
 ;Far jump to kernel
-jmp L0CD_SEG:0xB400
+jmp L0CD_SEG:0xC000
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -241,8 +265,6 @@ DRIVE_NO db 0 ;Our boot drive number
 PARTION_OFFSET dw 0 ;Offset of active partion in the partion table
 TRACK_SECTORS dw 0 ;Number of sectors per track
 HEADS dw 0 ;Number of heads
-
-BOOT_START_STR db "AleemOS - Please Wait", 0x0D, 0x0A, 0x00
 
 KERNEL_FNAME db "KERNEL  BIN"
 
@@ -719,7 +741,7 @@ KTRCKPS	dd 0x0	;EBX NOTE:Must be set at runtime
 	dd 0x9fa00		;ESP
 	dd 0x9fa00		;EBP
 KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
-	dd 0					;EDI
+KDATA		dd 0x0	;EDI NOTE:Must be set at runtime
 	dw L0DT_SEG		;ES
 	dw 0x0				;Reserved
 	dw L0CD_SEG		;CS
@@ -759,5 +781,4 @@ R2LD_SEG equ GDT_r2LD - GDT_start
 L0CD_SEG equ R0LDT_code - R0LDT_start
 L0DT_SEG equ R0LDT_data - R0LDT_start
 
-;Pad out so that BOOT.BIN takes up 4 sectors
-times 0x800-($-$$) nop
+;No need to pad out file since this file is stored in the filesystem

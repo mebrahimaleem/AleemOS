@@ -15,10 +15,12 @@ _start:
 [extern k_PARTITION_OFFSET]
 [extern k_TRACK_SECTORS]
 [extern k_HEADS]
+[extern k_KDATA]
 mov BYTE [k_DRIVE_NO], dl
 mov WORD [k_PARTITION_OFFSET], si
 mov WORD [k_TRACK_SECTORS], bx
 mov WORD [k_HEADS], cx
+mov WORD [k_KDATA], di
 
 [extern kernel]
 jmp kernel
