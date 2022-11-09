@@ -23,6 +23,9 @@ rep movsw ;Copy MBR
 
 jmp 0:MBR ;Long jump to rest of MBR to ensure CS is set to 0
 
+times 32-($-$$) nop
+dd 0 ;This is the signature (later set by boot.bin) that the kernel looks for
+
 MBR:
 sti ;Restore interupts
 mov BYTE [BOOT_DRIVE], dl ;Store boot drove

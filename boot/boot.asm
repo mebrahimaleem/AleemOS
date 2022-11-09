@@ -42,17 +42,46 @@ mov eax, 0xe820
 mov edx, 0x534D4150
 int 0x15
 
-jc prepare_pm ;Check for error
+jc .exit ;Check for error
 
 add di, 20 ;Next range
 dec si
 cmp si, 0
-je prepare_pm
+je .exit
 
 cmp ebx, 0
 jne .loop
 
-prepare_pm:
+
+.exit:
+
+;Next, we will store a timestamp on the MBR (on the disk) so that the kernel (in PM) can find the disk
+;The only way for this method to fail is for the user to boot the code at time t, then poweroff, then boot again (from another drive) at time t
+;This is very unlikely, so our method should be safe to use
+
+xor ah, ah ;Get time
+int 0x1a
+
+mov [MBR_SIG], dx ;Save this value to pass to the kernel
+mov [MBR_SIG+2], cx
+ 
+mov [0x600+32], dx ;Save this value in the MBR
+mov [0x600+34], cx
+
+mov si, 3 ;Attempt 3 writes
+
+write_MBR:
+mov al, 1
+
+;CHS (0, 0, 1)
+xor ch, ch
+mov cl, 1
+xor dh, dh
+mov dl, [DRIVE_NO]
+mov bx, 0x600
+mov ah, 3
+int 0x13
+
 ;Now we need to enter PM
 cli ;We will disable interupts until the kernel has correctly set up the IDT
 lgdt [GDT_ptr] ;Load the GDT descriptor
@@ -62,8 +91,16 @@ or eax, 0x01
 mov cr0, eax
 jmp CODE_SEG:enter_pm ;Far jump to 32-bit (to set CS)
 
+;Kernel Data structure
+
+KERNEL_DATA:
+
+;MBR signature
+MBR_SIG dd 0
+
 ;Address Range Descriptor Structure
 ARDS times 16*20 db 0xff
+
 
 ;We are now in 32-bit mode (but we stil need to set the segments registers)
 [BITS 32]
@@ -184,7 +221,7 @@ mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
-mov di, ARDS
+mov di, KERNEL_DATA
 
 ;Make sure we correctly set our TSS
 mov DWORD [KTRCKPS], ebx
