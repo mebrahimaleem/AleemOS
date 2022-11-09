@@ -4,6 +4,7 @@
 
 
 #include <stdint.h>
+#include "portio.h"
 
 extern inline void outb(volatile uint16_t port, volatile uint8_t byte){
 	asm volatile ("out %1, %0" : : "a"(byte), "Nd"(port));
