@@ -27,7 +27,7 @@ int 0x10
 
 ;Now we need to copy the kernel onto the RAM
 mov si, KERNEL_FNAME ;file to copy
-mov cx, 0xC000 ;Where to copy kernel
+mov cx, 0xE000 ;Where to copy kernel
 call VBR_READ_FILE
 
 ;Now we need the memory map
@@ -100,7 +100,6 @@ MBR_SIG dd 0
 
 ;Address Range Descriptor Structure
 ARDS times 16*20 db 0xff
-
 
 ;We are now in 32-bit mode (but we stil need to set the segments registers)
 [BITS 32]
@@ -246,13 +245,23 @@ mov gs, ax
 
 sti
 
-KTSS_EIP: ;Our EIP for the TSS
-nop
-mov ax, KTSS_SEG ;Set the TSS
-ltr ax
+;Now we need to setup and enable paging
+mov eax, PAGE_TABLE_1
+or eax, 3
+mov [PAGE_DIRECTORY], eax
 
-;Far jump to kernel
-jmp L0CD_SEG:0xC000
+;Set control register
+mov eax, PAGE_DIRECTORY
+mov cr3, eax
+
+;Enable paging
+mov eax, cr0
+or eax, 0x80000000
+mov cr0, eax
+
+
+
+int 0x30
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -337,6 +346,14 @@ db 0b10001111
 dw 0
 %endmacro
 
+%macro ISR_TASK 2
+dw 0
+dw %1
+db 0
+db ((0b10000101) + (%2<<5))
+dw 0
+%endmacro
+
 IDT_start:
 ISR_INT ISR_00 ;int 0x00 - Divide by zero
 ISR_INT ISR_01 ;int 0x01 - Debug
@@ -388,6 +405,9 @@ ISR_TRAP ISR_2D ;IRQ 0x0D - Slave FPU OR Co/Inter-processor
 ISR_TRAP ISR_2E ;IRQ 0x0E - Slave primary ATA
 ISR_TRAP ISR_2F ;IRQ 0x0F - Slave secondary ATA
 
+;Kernel defined interupts
+ISR_TASK KTSS_SEG, 0 ;int 0x30 Kernel entry task gate
+
 times 8 dq 0
 IDT_end:
 
@@ -420,6 +440,7 @@ ISR1D_S db "#VC", 0
 ISR1E_S db "#SX", 0
 
 ISR_00:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR00_S
@@ -427,6 +448,7 @@ call pm_print
 jmp $
 
 ISR_01:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR01_S
@@ -434,6 +456,7 @@ call pm_print
 iret
 
 ISR_02:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR02_S
@@ -441,6 +464,7 @@ call pm_print
 jmp $
 
 ISR_03:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR03_S
@@ -448,6 +472,7 @@ call pm_print
 iret
 
 ISR_04:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR04_S
@@ -455,6 +480,7 @@ call pm_print
 jmp $
 
 ISR_05:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR05_S
@@ -462,6 +488,7 @@ call pm_print
 jmp $
 
 ISR_06:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR06_S
@@ -469,6 +496,7 @@ call pm_print
 jmp $
 
 ISR_07:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR07_S
@@ -476,6 +504,7 @@ call pm_print
 jmp $
 
 ISR_08:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR08_S
@@ -486,6 +515,7 @@ ISR_09:
 iret
 
 ISR_0A:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0A_S
@@ -493,6 +523,7 @@ call pm_print
 jmp $
 
 ISR_0B:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0B_S
@@ -500,6 +531,7 @@ call pm_print
 jmp $
 
 ISR_0C:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0C_S
@@ -507,6 +539,7 @@ call pm_print
 jmp $
 
 ISR_0D:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0D_S
@@ -514,6 +547,7 @@ call pm_print
 jmp $
 
 ISR_0E:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0E_S
@@ -521,6 +555,7 @@ call pm_print
 jmp $
 
 ISR_10:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR10_S
@@ -528,6 +563,7 @@ call pm_print
 jmp $
 
 ISR_11:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR11_S
@@ -535,6 +571,7 @@ call pm_print
 jmp $
 
 ISR_12:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR12_S
@@ -542,6 +579,7 @@ call pm_print
 jmp $
 
 ISR_13:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR13_S
@@ -549,6 +587,7 @@ call pm_print
 jmp $
 
 ISR_14:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR14_S
@@ -556,6 +595,7 @@ call pm_print
 jmp $
 
 ISR_15:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR15_S
@@ -563,6 +603,7 @@ call pm_print
 jmp $
 
 ISR_1C:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1C_S
@@ -570,6 +611,7 @@ call pm_print
 jmp $
 
 ISR_1D:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1D_S
@@ -577,6 +619,7 @@ call pm_print
 jmp $
 
 ISR_1E:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1E_S
@@ -587,43 +630,58 @@ jmp $
 																			;	presses, it only needs to give it to other applications, which will be implemented in the ring 1/2 IDT's ISRs.
 
 ISR_20:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_21:
+cli
 in al, 0x60 ;Get keyscan to keep keyboard buffer clean
 
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_22:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_23:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_24:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_25:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_26:
+cli
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ISR_27:
+cli
 mov al, 0x0b
 out PIC1_CMD, al
 xor al, al
@@ -634,51 +692,67 @@ jne .spurious
 mov al, 0x20
 out PIC1_CMD, al
 .spurious:
+sti
 iret
 
 ISR_28:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_29:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2A:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2B:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2C:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2D:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2E:
+cli
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+sti
 iret
 
 ISR_2F:
+cli
 mov al, 0x0b
 out PIC2_CMD, al
 xor al, al
@@ -691,6 +765,7 @@ out PIC2_CMD, al
 .spurious:
 mov al, 0x20
 out PIC1_CMD, al
+sti
 iret
 
 ;GDT
@@ -760,7 +835,7 @@ KTSS_start: ;Kernel Task Segment State
 	dw KTSS_SEG 	;Link
 	dw 0x0000			;Reserved
 	dd 0x9fa00		;ESP 0
-	dw DATA_SEG		;SS 0
+	dw R0LDT_data	;SS 0
 	dw 0x0000			;Reserved
 	dd 0x7c00			;ESP 1
 	dw DATA_SEG		;SS 1
@@ -768,9 +843,9 @@ KTSS_start: ;Kernel Task Segment State
 	dd 0x7c00			;ESP 2
 	dw UDAT_SEG		;SS 2
 	dw 0x0000			;Reserved
-	dd 0x0000			;CR3
-	dd KTSS_EIP		;EIP
-	dd 0x06				;EFLAGS 
+dd PAGE_DIRECTORY ;CR3
+	dd 0xE000			;EIP
+	dd 0x200			;EFLAGS 
 	dd 0x0000			;EAX
 KHEADS	dd 0x0	;ECX NOTE:Must be set at runtime
 KBOOTNO	dd 0x0	;EDX NOTE:Must be set at runtine
@@ -817,5 +892,26 @@ R2LD_SEG equ GDT_r2LD - GDT_start
 
 L0CD_SEG equ R0LDT_code - R0LDT_start
 L0DT_SEG equ R0LDT_data - R0LDT_start
+
+;Paging tables
+
+;Page directory
+times 0x1400-($-$$) db 0;We need to be 4KiB aligned
+
+PAGE_DIRECTORY:
+times 1024 dd 2 ;Create non present pages
+
+;Page table 1
+PAGE_TABLE_1:
+%assign i 0
+%rep 0xC
+	dd ((i * 0x1000) | 3) + 0x0000
+%assign i i+1
+%endrep
+
+%rep 1024 - 0xC
+	dd ((i * 0x1000) | 3) + 0xE000 - 0xE000
+%assign i i+1
+%endrep
 
 ;No need to pad out file since this file is stored in the filesystem

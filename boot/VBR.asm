@@ -95,9 +95,9 @@ FILE_NOT_FOUND db "FATAL: FILE NOT FOUND - Get new copy of OS", 0
 times 0x100-($-$$) nop ;Pad out so that we know the exact memory location of this function (so that it can later be used)
 ;We will now search the root directory for a file called BOOT with extension BIN
 findBoot: ;Find the file pointed by si and copy it to cx
-	mov ax, ROOT_DIR ;Algorithm: check everyroot directory until we find a valid file
 	push cx
 	push si
+	mov ax, ROOT_DIR ;Algorithm: check everyroot directory until we find a valid file
 	.loop:
 		mov di, ax
 		pop si
