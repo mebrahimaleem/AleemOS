@@ -11,7 +11,7 @@ assignees: mebrahimaleem
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Please include steps to reproduce this bug. If possible, please also include the contents of all CPU registers.
+Please include steps to reproduce this bug. If possible, please also include the contents of all CPU registers and a memory core dump (if obtainable).
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
