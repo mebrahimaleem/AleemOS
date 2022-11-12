@@ -17,13 +17,13 @@ typedef struct BlockDescriptor {
 volatile BlockDescriptor* volatile HeapBase = (BlockDescriptor*)0x100000;
 
 //Sets up the kernel heap, root BlockDescriptor is @ 0x100000
-extern inline void initHeap(void){
+inline void initHeap(void){
 	HeapBase->flags = 0;
 	return;
 }
 
 //Allocates a new block of memory of size 'size'
-extern inline void* malloc(volatile uint32_t size){
+inline void* malloc(volatile uint32_t size){
 	//New block descriptor to use
 	volatile BlockDescriptor* volatile block = HeapBase;
 	while (1){
@@ -54,7 +54,7 @@ extern inline void* malloc(volatile uint32_t size){
 }
 
 //Free memory given the start of an allocated block
-extern inline void free(volatile void* volatile block){
+inline void free(volatile void* volatile block){
 	volatile BlockDescriptor* volatile descriptor = (volatile BlockDescriptor* volatile)(block - 4); //BlockDescriptor is 4 bytes behind allocated block
 	if (((volatile BlockDescriptor* volatile)(block + descriptor->size))->flags == 0) //Check if freed block is to become last block
 		descriptor->flags = 0;
