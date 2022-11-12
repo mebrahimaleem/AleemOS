@@ -16,7 +16,7 @@ mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
 ;Set the VGA video mode
-mov ah, 0x00
+xor ah, ah
 mov al, 0x03
 int 0x10 
 

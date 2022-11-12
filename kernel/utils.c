@@ -13,7 +13,7 @@ extern volatile KernelData* volatile kdata;
 inline uint8_t* int32_to_string(int32_t num, uint8_t base){
 
 	//Check for number 0 or invalid base
-	if (num == 0 || base == 0 || base > 36){
+	if (num == 0 || base < 2 || base > 36){
 		uint8_t* str = (uint8_t*)malloc(2);
 		str[0] = '0';
 		str[1] = 0;
@@ -63,7 +63,7 @@ inline uint8_t* int32_to_string(int32_t num, uint8_t base){
 inline uint8_t* uint32_to_string(uint32_t num, uint8_t base){
 
 	//Check for number 0 or invalid base
-	if (num == 0 || base == 0 || base > 36){
+	if (num == 0 || base < 2 || base > 36){
 		uint8_t* str = (uint8_t*)malloc(2);
 		str[0] = '0';
 		str[1] = 0;
