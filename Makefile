@@ -53,7 +53,7 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin Makefile
 $(FLAT_BIN): build/%.bin: boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
 
-build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVER_OBJ) Makefile
+build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile
 	@$(LD) $(LDFLAGS)
 
 build/kentry.elf: kernel/kentry.asm Makefile
