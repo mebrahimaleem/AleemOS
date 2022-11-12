@@ -101,6 +101,10 @@ MBR_SIG dd 0
 ;Address Range Descriptor Structure
 ARDS times 16*20 db 0xff
 
+;System TIME
+FRACTION_MS dd 0
+WHOLE_MS dd 0
+
 ;We are now in 32-bit mode (but we stil need to set the segments registers)
 [BITS 32]
 enter_pm:
@@ -207,7 +211,7 @@ out PIC1_DAT, al
 mov al, bh
 out PIC2_DAT, al
 
-;Load the IDT descripter
+;Load the IDT descriptor
 lidt [IDT_ptr]
 
 xor ebx, ebx
@@ -220,16 +224,12 @@ mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
-mov di, KERNEL_DATA
 
 ;Make sure we correctly set our TSS
 mov DWORD [KTRCKPS], ebx
 mov DWORD [KHEADS], ecx
 mov DWORD [KBOOTNO], edx
 mov DWORD [KPARTI], esi
-mov DWORD [KDATA], edi
-
-;jump to kernel
 
 ;Set the LDT
 mov ax, R0LD_SEG
@@ -259,9 +259,57 @@ mov eax, cr0
 or eax, 0x80000000
 mov cr0, eax
 
+;Setup PIT
 
+PIT_FREQ equ 100 ;100Hz
 
+;Find the closest PIT reload value
+xor edx, edx
+mov eax, 3579545
+mov ebx, PIT_FREQ
+div ebx
+cmp edx, 3579545/2
+jb .rd1 ;Round down
+inc eax ;Round up
+
+.rd1:
+xor edx, edx
+mov ebx, 3
+div ebx
+cmp edx, 3/2
+jb .rd2 ;Round down
+inc eax ;Round up
+
+.rd2:
+push eax
+;Calculate the frequency of IRQ0 firing
+xor edx, edx
+mov ebx, eax
+mov eax, 0xdbb3a062
+mul ebx
+shrd eax, edx, 10
+shr edx, 10
+
+mov [PIT_FRCMS], eax
+mov [PIT_WHLMS], edx
+
+;Actually set the PIT
+cli
+mov al, 0b00110100 ;Use rate generator because it has better accuracy
+out 0x43, al ;Set the mode
+
+pop eax
+out 0x40, al ;Set the reload value
+mov al, ah
+out 0x40, al
+
+sti ;Renable interupts
+
+;go to kernel (via task gate)
 int 0x30
+
+PIT_FRCMS dd 0
+PIT_WHLMS dd 0
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -631,57 +679,92 @@ jmp $
 
 ISR_20:
 cli
+
+;Save registers
+push eax
+push ebx
+
+;Get fractional and while ms delay between IRQ0s
+mov eax, [PIT_FRCMS]
+mov ebx, [PIT_WHLMS]
+
+;Update system timer
+add eax, DWORD [FRACTION_MS]
+add ebx, DWORD [WHOLE_MS]
+
+mov DWORD [FRACTION_MS], eax
+mov DWORD [WHOLE_MS], ebx
+
 mov al, 0x20
 out PIC1_CMD, al
+
+pop ebx
+pop eax
+
 sti
 iret
 
 ISR_21:
 cli
+push eax
+
 in al, 0x60 ;Get keyscan to keep keyboard buffer clean
 
 mov al, 0x20
 out PIC1_CMD, al
+
+pop eax
 sti
 iret
 
 ISR_22:
 cli
+push eax
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_23:
 cli
+push eax
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_24:
 cli
+push eax
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_25:
 cli
+push eax
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_26:
 cli
+push eax
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_27:
 cli
+push eax
 mov al, 0x0b
 out PIC1_CMD, al
 xor al, al
@@ -692,67 +775,83 @@ jne .spurious
 mov al, 0x20
 out PIC1_CMD, al
 .spurious:
+pop eax
 sti
 iret
 
 ISR_28:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_29:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2A:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2B:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2C:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2D:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2E:
 cli
+push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
 ISR_2F:
 cli
+push eax
 mov al, 0x0b
 out PIC2_CMD, al
 xor al, al
@@ -765,6 +864,7 @@ out PIC2_CMD, al
 .spurious:
 mov al, 0x20
 out PIC1_CMD, al
+pop eax
 sti
 iret
 
@@ -853,7 +953,7 @@ KTRCKPS	dd 0x0	;EBX NOTE:Must be set at runtime
 	dd 0x9fa00		;ESP
 	dd 0x9fa00		;EBP
 KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
-KDATA		dd 0x0	;EDI NOTE:Must be set at runtime
+	dd KERNEL_DATA;EDI NOTE:Must be set at runtime
 	dw L0DT_SEG		;ES
 	dw 0x0				;Reserved
 	dw L0CD_SEG		;CS

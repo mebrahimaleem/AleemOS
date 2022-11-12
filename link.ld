@@ -9,6 +9,7 @@ INPUT
 	build/memory.elf
 	build/portio.elf
 	build/basicio.elf
+	build/utils.elf
 	build/kernel.elf
 )
 
