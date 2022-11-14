@@ -12,6 +12,7 @@
 #include "portio.h"
 #include "memory.h"
 #include "utils.h"
+#include "../drivers/kbd.h"
 
 volatile uint8_t k_DRIVE_NO;
 volatile uint16_t k_PARTITION_OFFSET;
@@ -28,6 +29,8 @@ void kernel(void){
 
 	volatile const char* volatile loading_msg = "Loading ...";
 	for(volatile const char* volatile i = loading_msg; *i != 0; i++) put(*i, (uint8_t)(i-loading_msg), 0, 0x0F);
+
+	KBDResetMods();
 
 hang:
 	asm volatile ("hlt");

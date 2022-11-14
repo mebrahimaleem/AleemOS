@@ -105,6 +105,9 @@ ARDS times 16*20 db 0xff
 FRACTION_MS dd 0
 WHOLE_MS dd 0
 
+;Keyboard queue pointer
+KEYBOARD_QUEUE dd 0
+
 ;We are now in 32-bit mode (but we stil need to set the segments registers)
 [BITS 32]
 enter_pm:
@@ -401,6 +404,8 @@ db 0
 db ((0b10000101) + (%2<<5))
 dw 0
 %endmacro
+
+align 4
 
 IDT_start:
 ISR_INT ISR_00 ;int 0x00 - Divide by zero
@@ -870,6 +875,7 @@ iret
 
 ;GDT
 ;The GDT will contain 9 entries
+align 4
 GDT_start:
 	GDT_null: ;NULL descriptor
 		dq 0
@@ -911,6 +917,7 @@ GDT_start:
 		dq 0
 	GDT_end:
 
+align 4
 R0LDT_start: ;Our kernels LDT, has 3 entries
 	R0LDT_null: ;Ring 0 LDT Null descriptor
 		dq 0
@@ -931,6 +938,7 @@ R0LDT_start: ;Our kernels LDT, has 3 entries
 R0LDT_end:
 
 
+align 4
 KTSS_start: ;Kernel Task Segment State
 	dw KTSS_SEG 	;Link
 	dw 0x0000			;Reserved
@@ -972,10 +980,12 @@ KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
 	dw IDT_end - IDT_start ;NO IOPB
 KTSS_end:
 
+align 4
 IDT_ptr: ;This is the descriptor for the IDT
 	dw IDT_end - IDT_start -1 ;Size - 1
 	dd IDT_start ;Starting address
 
+align 4
 GDT_ptr: ;This is the descriptor for the GDT
 	dw GDT_end - GDT_start - 1 ;Size - 1
 	dd GDT_start ;Starting address
