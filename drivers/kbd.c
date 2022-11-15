@@ -148,11 +148,53 @@ inline char toAscii(uint32_t keycode){
 				return 'Y';
 			case 0x2C:
 				return 'Z';
+			case 0x02:
+				return '!';
+			case 0x03:
+				return '@';
+			case 0x04:
+				return '#';
+			case 0x05:
+				return '$';
+			case 0x06:
+				return '%';
+			case 0x07:
+				return '^';
+			case 0x08:
+				return '&';
+			case 0x09:
+				return '*';
+			case 0x0A:
+				return '(';
+			case 0x0B:
+				return ')';
+			case 0x0C:
+				return '_';
+			case 0x0D:
+				return '+';
+			case 0x1A:
+				return '{';
+			case 0x1B:
+				return '}';
+			case 0x2B:
+				return '|';
+			case 0x27:
+				return ':';
+			case 0x28:
+				return '"';
+			case 0x29:
+				return '~';
+			case 0x33:
+				return '<';
+			case 0x34:
+				return '>';
+			case 0x35:
+				return '?';
 			default:
-				return 0; //Unkown keyscan (maybe wrong scan set)
+				break;	
 		}
 
-	if (keystroke.lShft == 0 && keystroke.rShft == 0 && keystroke.capLk == 0)
+	else if (keystroke.lShft == 0 && keystroke.rShft == 0 && keystroke.capLk == 0)
 		switch (keycode){
 			case 0x1E:
 				return 'a';
@@ -206,8 +248,63 @@ inline char toAscii(uint32_t keycode){
 				return 'y';
 			case 0x2C:
 				return 'z';
+			case 0x02:
+				return '1';
+			case 0x03:
+				return '2';
+			case 0x04:
+				return '3';
+			case 0x05:
+				return '4';
+			case 0x06:
+				return '5';
+			case 0x07:
+				return '6';
+			case 0x08:
+				return '7';
+			case 0x09:
+				return '8';
+			case 0x0A:
+				return '9';
+			case 0x0B:
+				return '0';
+			case 0x0C:
+				return '-';
+			case 0x0D:
+				return '=';
+			case 0x1A:
+				return '[';
+			case 0x1B:
+				return ']';
+			case 0x2B:
+				return '\\';
+			case 0x27:
+				return ';';
+			case 0x28:
+				return '\'';
+			case 0x29:
+				return '`';
+			case 0x33:
+				return ',';
+			case 0x34:
+				return '.';
+			case 0x35:
+				return '/';
 			default:
-				return 0; //Unkown keyscan (maybe wrong scan set)
+				break;	
+		}
+
+		switch (keycode){
+			case 0x1C:
+				return '\n';
+			case 0x0F:
+				return '\t';
+			case 0x39:
+				return ' ';
+			case 0x0E:
+				return '\b';
+			default:
+				break;
 		}
 
 	return 0; //Invalid keyscan
