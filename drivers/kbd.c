@@ -294,18 +294,18 @@ inline char toAscii(uint32_t keycode){
 				break;	
 		}
 
-		switch (keycode){
-			case 0x1C:
-				return '\n';
-			case 0x0F:
-				return '\t';
-			case 0x39:
-				return ' ';
-			case 0x0E:
-				return '\b';
-			default:
-				break;
-		}
+	switch (keycode){
+		case 0x1C:
+			return '\n';
+		case 0x0F:
+			return '\t';
+		case 0x39:
+			return ' ';
+		case 0x0E:
+			return '\b';
+		default:
+			break;
+	}
 
 	return 0; //Invalid keyscan
 }

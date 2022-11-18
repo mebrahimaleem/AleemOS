@@ -30,7 +30,7 @@ inline uint8_t* int32_to_string(int32_t num, uint8_t base){
 	
 	//Do conversion
 	for (uint8_t i = 0; i < 32; i++){
-		str[31-i] = num % base;
+		str[31-i] = (uint8_t)(num % base);
 		num /= base;
 	}
 
@@ -39,7 +39,7 @@ inline uint8_t* int32_to_string(int32_t num, uint8_t base){
 	uint8_t* s = 0;
 	for (uint8_t* i = str; i < str + 32; i++){
 		if (*i != 0 && st == 0){
-			st = (uint8_t*)malloc(33 - (i - str) + (neg ? 1 : 0));
+			st = (uint8_t*)malloc((uint8_t)(33 - (i - str) + (neg ? 1 : 0)));
 			s = st;
 			if (neg == 1){
 				st[0] = '-';
@@ -73,7 +73,7 @@ inline uint8_t* uint32_to_string(uint32_t num, uint8_t base){
 	uint8_t* str = (uint8_t*)malloc(32);
 	//Do conversion
 	for (uint8_t i = 0; i < 32; i++){
-		str[31-i] = num % base;
+		str[31-i] = (uint8_t)(num % base);
 		num /= base;
 	}
 
@@ -82,7 +82,7 @@ inline uint8_t* uint32_to_string(uint32_t num, uint8_t base){
 	uint8_t* s = 0;
 	for (uint8_t* i = str; i < str + 32; i++){
 		if (*i != 0 && st == 0){
-			st = (uint8_t*)malloc(33 - (i - str));
+			st = (uint8_t*)malloc((uint8_t)(33 - (i - str)));
 			s = st;
 			st[32 - (i - str)] = 0;
 		}
