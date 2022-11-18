@@ -62,8 +62,8 @@ build/kentry.elf: kernel/kentry.asm Makefile
 build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD) link.ld Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(KERNEL_OBJ): build/%.elf: kernel/%.c Makefile
+$(KERNEL_OBJ): build/%.elf: kernel/%.c kernel/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(DRIVERS_OBJ): build/%.elf: drivers/%.c Makefile
+$(DRIVERS_OBJ): build/%.elf: drivers/%.c drivers/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
