@@ -21,3 +21,4 @@ typedef struct KernelData {
 	volatile SystemTime systemTime;
 } KernelData;
 
+extern volatile KernelData* volatile kdata;

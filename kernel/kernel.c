@@ -33,18 +33,6 @@ void kernel(void){
 
 	KBDResetMods();
 
-	//Keep keyboard event queue clear
-	volatile KBDEventQueue* volatile tmp;
-	while (1){
-		asm volatile ("cli" : : : "memory");
-		if (KBDNextEvent != 0){
-			tmp = KBDNextEvent;
-			KBDNextEvent = KBDNextEvent->prev;
-			KBDNextEvent->next = 0;
-			free(tmp);
-		}
-		asm volatile ("sti" : : : "memory");
-	}
-
-	asm volatile ("hlt" : : : "memory");
+	//hang
+	while (1) asm volatile ("hlt" : : : "memory");
 }

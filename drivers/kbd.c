@@ -10,6 +10,8 @@
 volatile KBDEventQueue* volatile KBDRoot = 0;
 volatile KBDEventQueue* volatile KBDNextEvent = 0;
 
+uint8_t kbdEventTrack = 0;
+
 typedef struct Keystroke {
 	uint8_t E0 : 1;
 	uint8_t E1 : 1;
@@ -31,6 +33,8 @@ inline void KBDResetMods(){
 }
 
 void ISR21_handler(uint32_t byte){
+	if (kbdEventTrack == 0) return;
+
 	//First check if root is not already set
 	if (KBDRoot == 0){
 		keystroke.E0 = 0;
@@ -310,3 +314,6 @@ inline char toAscii(uint32_t keycode){
 	return 0; //Invalid keyscan
 }
 
+inline void setEventTrack(uint8_t setting){
+	kbdEventTrack = setting;
+}
