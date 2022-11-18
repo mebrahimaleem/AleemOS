@@ -26,13 +26,25 @@ volatile KernelData* volatile kdata;
 void kernel(void){
 	initHeap();
 	kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA;
+	clearVGA();
 
 	volatile const char* volatile loading_msg = "Loading ...";
-	for(volatile const char* volatile i = loading_msg; *i != 0; i++) put(*i, (uint8_t)(i-loading_msg), 0, 0x0F);
+	vgaprint((volatile char* volatile)loading_msg, 0x0F);
 
 	KBDResetMods();
 
-hang:
-	asm volatile ("hlt");
-goto hang;
+	//Keep keyboard event queue clear
+	volatile KBDEventQueue* volatile tmp;
+	while (1){
+		asm volatile ("cli" : : : "memory");
+		if (KBDNextEvent != 0){
+			tmp = KBDNextEvent;
+			KBDNextEvent = KBDNextEvent->prev;
+			KBDNextEvent->next = 0;
+			free(tmp);
+		}
+		asm volatile ("sti" : : : "memory");
+	}
+
+	asm volatile ("hlt" : : : "memory");
 }
