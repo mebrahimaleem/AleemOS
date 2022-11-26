@@ -7,8 +7,6 @@
 #include "memory.h"
 #include "utils.h"
 
-extern volatile KernelData* volatile kdata;
-
 //Converts an integer to string
 inline uint8_t* int32_to_string(int32_t num, uint8_t base){
 
@@ -103,4 +101,13 @@ inline void sleepms(uint32_t time){
 	volatile uint32_t ctime = kdata->systemTime.whole_ms;
 	while (kdata->systemTime.whole_ms - ctime < time) asm volatile ("hlt" : : : "memory");
 	return;
+}
+
+inline uint8_t strcmp(uint8_t* str1, uint8_t* str2){
+	uint8_t* i = str1;
+	uint8_t* j = str2;
+	j--;
+	for (; *i != 0 && *(j+1) != 0; i++) if (*i != *(++j)) return 0;
+	if (*i != *(j+1)) return 0;
+	return 1;
 }

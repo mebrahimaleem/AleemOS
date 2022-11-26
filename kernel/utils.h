@@ -10,3 +10,6 @@ extern uint8_t* uint32_to_string(uint32_t num, uint8_t base);
 
 //Sleeps the process time ms
 extern void sleepms(uint32_t time);
+
+//Compares two string
+extern uint8_t strcmp(uint8_t* str1, uint8_t* str2);
