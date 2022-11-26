@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 #include "basicio.h" 
+#include "memory.h"
+#include "utils.h"
 
 volatile uint8_t* volatile vgacursor = (volatile uint8_t* volatile)0xb8000;
 
@@ -62,4 +64,10 @@ inline void vgaprint(volatile char* volatile str, volatile uint8_t col){
 	}
 
 	return;
+}
+
+inline void vgaprintint(uint32_t num, uint8_t base, uint8_t col){
+	volatile char* volatile str = (volatile char* volatile)uint32_to_string(num, base);
+	vgaprint(str, col);
+	free(str);
 }
