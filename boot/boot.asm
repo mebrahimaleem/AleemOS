@@ -113,6 +113,9 @@ ARDS times 16*20 db 0xff
 FRACTION_MS dd 0
 WHOLE_MS dd 0
 
+PIT_FRCMS dd 0
+PIT_WHLMS dd 0
+
 ;Keyboard queue pointer
 KEYBOARD_QUEUE dd 0
 
@@ -318,9 +321,6 @@ sti ;Renable interupts
 
 ;go to kernel (via task gate)
 int 0x30
-
-PIT_FRCMS dd 0
-PIT_WHLMS dd 0
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:

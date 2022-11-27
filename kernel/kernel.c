@@ -204,21 +204,21 @@ void kernel(void){
 	
 	//Kernel TSS
 	KTSS->link = 48;
-	KTSS->esp0 = 0xFFC06fdc;
+	KTSS->esp0 = 0xFFFFFFFC;
 	KTSS->ss0 = 16;
 	KTSS->esp1 = 0x7c00;
 	KTSS->ss1 = 16;
 	KTSS->esp2 = 0x7c00;
 	KTSS->ss2 = 16;
 	KTSS->cr3 = k_CR3;
-	KTSS->eip = (uint32_t)processManager;
-	KTSS->eflags = 0; //0x200;
+	KTSS->eip = 0;
+	KTSS->eflags = 0;
 	KTSS->eax = 0;
 	KTSS->ecx = 0;
 	KTSS->edx = 0;
 	KTSS->ebx = 0;
-	KTSS->esp = 0xFFC06fdc;
-	KTSS->ebp = 0xFFC07000;
+	KTSS->esp = 0xFFFFFFFC;
+	KTSS->ebp = 0xFFFFFFFC;
 	KTSS->esi = 0;
 	KTSS->edi = 0;
 	KTSS->es = 16;
@@ -232,7 +232,7 @@ void kernel(void){
 	
 	//User TSS
 	UTSS->link = 48;
-	UTSS->esp0 = 0xFFC06fdc;
+	UTSS->esp0 = 0xFFFFFFFc;
 	UTSS->ss0 = 16;
 	UTSS->esp1 = 0x7c00;
 	UTSS->ss1 = 16;
@@ -261,17 +261,69 @@ void kernel(void){
 	//Setup system tables
 	setSysTables();
 
+	asm volatile ("xchg bx, bx" : : : "memory");
 	//Return to default application
 	asm volatile ("pushf \n pop ecx \n or ecx, 0x4200 \n \
 			mov ax, 0x23 \n mov dx, ax \n mov es, ax \n mov fs, ax \n mov gs, ax \n \
 		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" : : "b"(entry): "memory");
-	
-	//hang
+
 hang:
 	while (1) asm volatile ("hlt" : : : "memory");
 }
 
-void processManager(uint32_t check, uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx, 
-		uint32_t esi, uint32_t edi, uint32_t esp, uint32_t ebp){
-	while (1) asm volatile ("hlt" : : : "memory"); //We haven't implemented userland interrupt handling yet
+void processManager(uint32_t cs, uint32_t check){
+
+	//Check for kill process
+	if (check == 0){
+		//TODO: Implement this
+		vgaprint((volatile char* volatile)"Error while killing process", 0x04);
+	}
+
+	//Check for IRQ0
+	else if (check == 1) {
+		kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
+		kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
+		kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
+		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax");
+	}
+
+	//Check for IRQ1
+	else if (check == 2) {
+		uint32_t stroke;
+		asm volatile ("push eax \n in al, 0x60 \n movzx eax, al \n mov %0, eax \n pop eax" : "=m"(stroke): : "memory"); //Get keystroke
+		ISR21_handler(stroke); //Pass keystroke to driver
+		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory"); //Tell PIC we are done
+	}
+
+	//Check for Master PIC IRQ
+	else if (check <= 7){
+		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory"); //Tell PIC we are done
+	}
+
+	//Check for spurious
+	else if (check == 8){
+		uint32_t res;
+		asm volatile ("push eax \n mov al, 0xb \n out 0x20, al \n xor al, al \n out 0x80, al \n in al, 0x20 \n movzx eax, al \n \
+				mov %0, eax \n pop eax" : "=m"(res) : : "memory");
+		if (res == 7)
+			asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory");
+	}
+
+	//Check for Slave PIC IRQ
+	else if (check <= 15){
+		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n out 0xA0, al \n pop eax"); //Tell PIC we are done
+	}
+
+	//Check for spurious
+	else if (check == 16){
+		uint32_t res;
+		asm volatile ("push eax \n mov al, 0xb \n out 0xA0, al \n xor al, al \n out 0x80, al \n in al, 0xA0 \n movzx eax, al \n \
+				mov %0, eax \n pop eax" : "=m"(res) : : "memory");
+		if (res == 15)
+			asm volatile ("push eax \n mov al, 0x20 \n out 0xA0, al \n pop eax" : : : "memory");
+		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory");
+	}
+
+	//We need to execute a far return
+	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
 }

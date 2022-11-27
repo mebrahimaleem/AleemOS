@@ -3,8 +3,7 @@
 //provides declarations for shared kernel data structures and functions
 
 void kernel(void);
-void processManager(uint32_t check, uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx,
-		uint32_t esi, uint32_t edi, uint32_t esp, uint32_t ebp);
+void processManager(uint32_t check, uint32_t eip);
 
 typedef struct MemoryMapEntry {
 	volatile uint64_t base;
@@ -15,6 +14,8 @@ typedef struct MemoryMapEntry {
 typedef struct SystemTime {
 	volatile uint32_t fraction_ms;
 	volatile uint32_t whole_ms;
+	volatile uint32_t fraction_diff;
+	volatile uint32_t whole_diff;
 } SystemTime;
 
 typedef struct KernelData {

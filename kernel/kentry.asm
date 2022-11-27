@@ -157,223 +157,332 @@ UIDT_start:
 	ISR_TRAP IRQD
 	ISR_TRAP IRQE
 	ISR_TRAP IRQF
-
-;Task Gates
-	ISR_TASK 40, 0 ;int 0x30
 UIDT_end:
 
+[extern processManager]
 ISR_KILL:
 cli
-mov dword [0xFFC06FFC], 0
-int 0x30
+xchg bx, bx
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 0
+push 0 
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ0:
 cli
-mov dword [0xFFC06FFC], 1
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 1
+push 1
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ1:
 cli
-mov dword [0xFFC06FFC], 2
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 2
+push 2
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ2:
 cli
-mov dword [0xFFC06FFC], 3
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 3
+push 3
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ3:
 cli
-mov dword [0xFFC06FFC], 4
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 4
+push 4
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ4:
 cli
-mov dword [0xFFC06FFC], 5
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 5
+push 5
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ5:
 cli
-mov dword [0xFFC06FFC], 6
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 6
+push 6
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ6:
 cli
-mov dword [0xFFC06FFC], 7
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 7
+push 7
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ7:
 cli
-mov dword [0xFFC06FFC], 8
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 8
+push 8
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ8:
 cli
-mov dword [0xFFC06FFC], 9
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 9
+push 9
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQ9:
 cli
-mov dword [0xFFC06FFC], 10
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 10
+push 10
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQA:
 cli
-mov dword [0xFFC06FFC], 11
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 11
+push 11
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQB:
 cli
-mov dword [0xFFC06FFC], 12
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 12
+push 12
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQC:
 cli
-mov dword [0xFFC06FFC], 13
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 13
+push 13
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQD:
 cli
-mov dword [0xFFC06FFC], 14
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 14
+push 14
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQE:
 cli
-mov dword [0xFFC06FFC], 15
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 15
+push 15
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 IRQF:
 cli
-mov dword [0xFFC06FFC], 16
-mov dword [0xFFC06FF8], eax
-mov dword [0xFFC06FF4], ebx
-mov dword [0xFFC06FF0], ecx
-mov dword [0xFFC06FEC], edx
-mov dword [0xFFC06FE8], esi
-mov dword [0xFFC06FE4], edi
-mov dword [0xFFC06FE0], esp
-mov dword [0xFFC06FDC], ebp
-int 0x30
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax ;Change to kernel PD
+push 16
+push 16
+add esp, 4
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+sti
+iret
 
 ISR_END:
 
@@ -410,6 +519,7 @@ iret
 setSysTables:
 push ebp
 mov ebp, esp
+cli
 lgdt [0xFFC06138]
 lidt [0xFFC0613E]
 push eax
