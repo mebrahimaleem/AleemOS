@@ -262,7 +262,6 @@ void kernel(void){
 	setSysTables();
 
 	//Return to default application
-	asm volatile ("xchg bx, bx" : : : "memory");
 	asm volatile ("pushf \n pop ecx \n or ecx, 0x4200 \n \
 			mov ax, 0x23 \n mov dx, ax \n mov es, ax \n mov fs, ax \n mov gs, ax \n \
 		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" : : "b"(entry): "memory");

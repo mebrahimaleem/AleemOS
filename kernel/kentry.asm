@@ -165,7 +165,6 @@ UIDT_end:
 ISR_KILL:
 cli
 mov dword [0xFFC06FFC], 0
-xchg bx, bx
 int 0x30
 
 IRQ0:
