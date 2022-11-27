@@ -11,6 +11,7 @@ INPUT
 	build/basicio.elf
 	build/utils.elf
 	build/kbd.elf
+	build/ELFparse.elf
 	build/kernel.elf
 )
 
@@ -20,14 +21,12 @@ SECTIONS {
 	. = 0xE000;
 	.text : {
 		*(.text)
+		*(.rodata)
 	}
 	.data : {
 		*(.data)
-		*(.rodata)
 	}
 	.bss : {
 		*(.bss)
 	}
 }
-
-

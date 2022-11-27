@@ -29,6 +29,15 @@ int 0x10
 mov si, KERNEL_FNAME ;file to copy
 mov cx, 0xE000 ;Where to copy kernel
 call VBR_READ_FILE
+xor dx, dx
+mov es, dx
+
+;Copy the default application (sh.elf) onto the RAM
+mov si, DEFAPP_FNAME
+mov cx, 0x0800
+call VBR_READ_FILE
+xor dx, dx
+mov es, dx
 
 ;Now we need the memory map
 get_mmap:
@@ -51,7 +60,6 @@ je .exit
 
 cmp ebx, 0
 jne .loop
-
 
 .exit:
 
@@ -364,6 +372,7 @@ TRACK_SECTORS dw 0 ;Number of sectors per track
 HEADS dw 0 ;Number of heads
 
 KERNEL_FNAME db "KERNEL  BIN"
+DEFAPP_FNAME db "SH      ELF"
 
 ;NOTE: 	The remaining code defines the various system datastructures that are used in protected mode. Most OS implementations do this in the kernel, but in order
 				;to call the kernel in protected mode, we will declare these in the bootloader and the kernel can access them later (using sgdt sidt, Etc.)
@@ -874,7 +883,6 @@ sti
 iret
 
 ;GDT
-;The GDT will contain 9 entries
 align 4
 GDT_start:
 	GDT_null: ;NULL descriptor
@@ -900,12 +908,6 @@ GDT_start:
 		db 0b10001001
 		db 0b01000000
 		db 0x00
-	GDT_UTSS: ;Ring 2 task descriptor
-		dq 0
-	GDT_UCod: ;Ring 2 code descriptor
-		dq 0
-	GDT_UDat: ;Ring 2 data descriptor
-		dq 0
 	GDT_r0LD: ;Ring 0 LDT descriptor
 		dw R0LDT_end - R0LDT_start - 1
 		dw R0LDT_start
@@ -913,7 +915,7 @@ GDT_start:
 		db 0b10000010
 		db 0b00000000
 		db 0x00		
-	GDT_r2LD: ;Ring 2 LDT descriptor
+	GDT_UTSS: ;Current user process TSS
 		dq 0
 	GDT_end:
 
@@ -949,7 +951,7 @@ KTSS_start: ;Kernel Task Segment State
 	dw DATA_SEG		;SS 1
 	dw 0x0000			;Reserved
 	dd 0x7c00			;ESP 2
-	dw UDAT_SEG		;SS 2
+	dw DATA_SEG		;SS 2
 	dw 0x0000			;Reserved
 dd PAGE_DIRECTORY ;CR3
 	dd 0xE000			;EIP
@@ -977,7 +979,7 @@ KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
 	dw (R0LD_SEG/8)<<3;LDT Segment Descriptor
 	dw 0x0				;Reserved
 	dw 0x0				;Reserved + T
-	dw IDT_end - IDT_start ;NO IOPB
+	dw IDT_end - IDT_start
 KTSS_end:
 
 align 4
@@ -994,11 +996,7 @@ GDT_ptr: ;This is the descriptor for the GDT
 CODE_SEG equ GDT_code - GDT_start
 DATA_SEG equ GDT_data - GDT_start
 KTSS_SEG equ GDT_KTSS - GDT_start
-UTSS_SEG equ GDT_UTSS - GDT_start
-UCOD_SEG equ GDT_UCod - GDT_start
-UDAT_SEG equ GDT_UDat - GDT_start
 R0LD_SEG equ GDT_r0LD - GDT_start
-R2LD_SEG equ GDT_r2LD - GDT_start
 
 L0CD_SEG equ R0LDT_code - R0LDT_start
 L0DT_SEG equ R0LDT_data - R0LDT_start
@@ -1014,13 +1012,8 @@ times 1024 dd 2 ;Create non present pages
 ;Page table 1
 PAGE_TABLE_1:
 %assign i 0
-%rep 0xC
+%rep 1024
 	dd ((i * 0x1000) | 3) + 0x0000
-%assign i i+1
-%endrep
-
-%rep 1024 - 0xC
-	dd ((i * 0x1000) | 3) + 0xE000 - 0xE000
 %assign i i+1
 %endrep
 

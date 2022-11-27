@@ -3,7 +3,7 @@ CWARN := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wwrite-strings -Wmiss
 
 #CWARN_IGN := -Wcast-align
 
-CFLAGS := $(CWARN) -masm=intel -m32 -fno-pie -ffreestanding -c
+CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c
 
 CC := gcc
 
@@ -36,7 +36,7 @@ build/os.img: build/MBR.bin build/FS.img Makefile
 	@cat build/MBR.bin build/FS.img > build/os.img
 	@truncate -s 1440000 build/os.img
 
-build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin Makefile
+build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
 	@cat build/VBR.bin > build/FS.img
 	@truncate -s 1440000 build/FS.img
 	@losetup -D
@@ -44,8 +44,10 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin Makefile
 	@mount /dev/loop0 mnt
 	@cp build/boot.bin mnt/BOOT.BIN
 	@cp build/kernel.bin mnt/KERNEL.BIN
+	@cp build/sh.elf mnt/SH.ELF
 	@fatattr +rhs mnt/BOOT.BIN
 	@fatattr +rhs mnt/KERNEL.BIN
+	@fatattr -rhs mnt/SH.ELF
 	@umount mnt
 	@dd if=/dev/loop0 seek=512 of=build/FS.img
 	@losetup -d /dev/loop0
@@ -67,3 +69,7 @@ $(KERNEL_OBJ): build/%.elf: kernel/%.c kernel/%.h Makefile
 
 $(DRIVERS_OBJ): build/%.elf: drivers/%.c drivers/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
+
+build/sh.elf : defapp/* Makefile
+	@$(CC) $(CFLAGS) defapp/sh.c -o build/sh.o
+	@ld -melf_i386 -o build/sh.elf --entry=main build/sh.o --oformat=elf32-i386

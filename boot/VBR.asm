@@ -81,7 +81,7 @@ ROOT_DIR equ 0x9000 ;Start of the RootDirectory on RAM
 FSDATA equ 0x20 ;NOTE: not the start of the data area (in sectors), this is set such that cluster 2 is the start of the data area (since 0 and 1 are reserved)
 
 mov si, BOOT_FNAME ;The file to copy
-mov cx, 0xAC00 ;Where to copy start of boot
+mov ecx, 0xAC00 ;Where to copy start of boot
 call findBoot
 
 mov dl, BYTE [DRIVE_NO] ;Pass important drive parameters to the remainaing bootloader
@@ -124,7 +124,23 @@ readBoot:
 	.loop:
 		cmp bx, 0x0FFF ;Check if last cluster
 		je bootjmp ;If so, go to boot
+		
+		push dx
+		mov dx, 512
+		cmp cx, 0xFDFF
+		jb .nocarry
+		mov dx, es
+		add dx, 0x1000
+		mov es, dx
+		sub cx, 0xFDFF
+		xor dx, dx
+		.nocarry:
 		add cx, 512 ;Copy to next cluster
+		cmp dx, 0
+		jne .sks
+		sub cx, 513
+		.sks:
+		pop dx
 
 		mov dx, bx
 		call readCluster ;Read the next cluster
@@ -137,7 +153,7 @@ bootjmp:
 				
 readCluster: ;Copies cluster bx to address es:cx
 	add bx, FSDATA ;Add data area offset
-	pusha
+	pusha 
 	call MBR_READ_SECTOR ;Read cluster
 	popa
 	ret

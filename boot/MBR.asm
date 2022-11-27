@@ -144,7 +144,6 @@ div word [HEADS]
 mov dh, dl
 mov ch, al
 
-
 ;Read the disk using int 0x13
 mov al, 1
 mov dl, BYTE [BOOT_DRIVE]
