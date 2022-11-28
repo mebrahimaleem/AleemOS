@@ -162,7 +162,6 @@ UIDT_end:
 [extern processManager]
 ISR_KILL:
 cli
-xchg bx, bx
 pushad
 mov ebp, esp
 mov eax, cr3

@@ -12,6 +12,7 @@
 #include "portio.h"
 #include "memory.h"
 #include "utils.h"
+#include "process.h"
 #include "../drivers/kbd.h"
 #include "ELFparse.h"
 
@@ -37,11 +38,14 @@ volatile KernelData* volatile kdata;
 extern void setSysTables(void);
 
 //Create new system tables	
-	DTentry* volatile GDT = (DTentry* volatile)0xFFC06000;
-	TSS* volatile KTSS = (TSS* volatile)0xFFC06068;
-	TSS* volatile UTSS = (TSS* volatile)0xFFC060D0;
-	IDTint* volatile IDT = (IDTint* volatile)0xFFC06200;
-	
+TSS* volatile KTSS = (TSS* volatile)0xFFC06068;
+TSS* volatile UTSS = (TSS* volatile)0xFFC060D0;
+DTentry* volatile GDT = (DTentry* volatile)0xFFC06000;
+IDTint* volatile IDT = (IDTint* volatile)0xFFC06200;
+
+uint32_t defAppBP; 
+uint32_t entry;
+
 void kernel(void){
 	initHeap(); //Setup kernel heap
 	kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
@@ -77,14 +81,13 @@ void kernel(void){
 	//Get address info from ELF
 	ElfPageList* pages;
 	uint32_t sz;
-	uint32_t entry;
 
 	if (calcELF((uint8_t*)0x800, &pages, &sz) != 0){
 		vgaprint((volatile char* volatile)"ERROR! The executable is not supported by this device\n.", 0x04);
 		goto hang;
 	}
 
-	uint32_t defAppBP = sz - (sz % 0x400000);
+	defAppBP = sz - (sz % 0x400000);
 	uint32_t* defAppPD = (uint32_t*)0x400000;
 	uint32_t* defAppPT = (uint32_t*)(0x400000 + 0x1000);
 	uint32_t* highPT = (uint32_t*)(0x400000 + 0x2000);
@@ -261,11 +264,22 @@ void kernel(void){
 	//Setup system tables
 	setSysTables();
 
-	asm volatile ("xchg bx, bx" : : : "memory");
-	//Return to default application
-	asm volatile ("pushf \n pop ecx \n or ecx, 0x4200 \n \
-			mov ax, 0x23 \n mov dx, ax \n mov es, ax \n mov fs, ax \n mov gs, ax \n \
-		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" : : "b"(entry): "memory");
+	processState* defApp = malloc(sizeof(processState));
+	defApp->eax = 0;
+	defApp->ebx = 0;
+	defApp->ecx = 0;
+	defApp->edx = 0;
+	defApp->esi = 0;
+	defApp->edi = 0;
+	defApp->eflags = 0x200;
+	defApp->esp = defAppBP + 0x400000 - 4;
+	defApp->ebp = defAppBP + 0x400000;
+	defApp->eip = entry;
+	defApp->cr3 = (uint32_t)defAppPD;
+
+	setEventTrack(1);
+	clearVGA();
+	createProcess(defApp, 0);
 
 hang:
 	while (1) asm volatile ("hlt" : : : "memory");
@@ -275,8 +289,10 @@ void processManager(uint32_t cs, uint32_t check){
 
 	//Check for kill process
 	if (check == 0){
-		//TODO: Implement this
-		vgaprint((volatile char* volatile)"Error while killing process", 0x04);
+		killProcess();
+
+		//If killProcess returned it means that it failed to start the previous process (probably because it doesn't exist)
+		kernel();
 	}
 
 	//Check for IRQ0

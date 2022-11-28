@@ -131,3 +131,6 @@ typedef struct TSS {
 } TSS;
 
 extern volatile KernelData* volatile kdata;
+extern TSS* volatile KTSS;
+extern TSS* volatile UTSS;
+extern DTentry* volatile GDT;

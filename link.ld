@@ -12,6 +12,7 @@ INPUT
 	build/utils.elf
 	build/kbd.elf
 	build/ELFparse.elf
+	build/process.elf
 	build/kernel.elf
 )
 
