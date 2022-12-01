@@ -16,10 +16,12 @@ typedef struct processState {
 	uint32_t cr3;
 	uint32_t IDN; //Identification number
 	struct processState* next;
+	uint32_t argc;
+	uint32_t argv;
 } processState;
 
 //Starts a process
-extern void startProcess(processState* state);
+extern void startProcess(processState* state, uint8_t toStart);
 
 //Creates and starts a new process with the processState 'state'
 extern void createProcess(processState* state, processState* cstate);

@@ -70,6 +70,9 @@ $(KERNEL_OBJ): build/%.elf: kernel/%.c kernel/%.h Makefile
 $(DRIVERS_OBJ): build/%.elf: drivers/%.c drivers/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-build/sh.elf : defapp/* Makefile
+build/sh.elf : defapp/* build/stdc/crt0.o Makefile
 	@$(CC) $(CFLAGS) defapp/sh.c -o build/sh.o
-	@ld -melf_i386 -o build/sh.elf --entry=main build/sh.o --oformat=elf32-i386
+	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o
+
+build/stdc/crt0.o : stdc/crt0.asm Makefile
+	@$(E_NASM) -o $@ $<

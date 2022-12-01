@@ -157,7 +157,40 @@ UIDT_start:
 	ISR_TRAP IRQD
 	ISR_TRAP IRQE
 	ISR_TRAP IRQF
+
+;System ISRs
+	ISR_INT ISR_SYSCALL ;System call (int 0x30)
 UIDT_end:
+
+[extern sysCall]
+ISR_SYSCALL:
+cli
+pop ebx
+pop ecx
+pushad
+mov ebp, esp
+mov eax, cr3
+push eax
+mov eax, 0xc000
+mov cr3, eax
+push 0
+push ebx
+push ecx
+add esp, 4
+call 0x8:sysCall
+add esp, 4
+pop ebx
+mov cr3, ebx
+pop edi
+pop esi
+pop ebp
+add esp, 4
+pop ebx
+pop edx
+pop ecx
+add esp, 4
+sti
+iret
 
 [extern processManager]
 ISR_KILL:
@@ -169,8 +202,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 0
-push 0 
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -188,8 +219,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 1
-push 1
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -207,8 +236,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 2
-push 2
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -226,8 +253,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 3
-push 3
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -245,8 +270,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 4
-push 4
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -264,8 +287,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 5
-push 5
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -283,8 +304,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 6
-push 6
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -302,8 +321,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 7
-push 7
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -321,8 +338,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 8
-push 8
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -340,8 +355,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 9
-push 9
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -359,8 +372,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 10
-push 10
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -378,8 +389,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 11
-push 11
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -397,8 +406,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 12
-push 12
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -416,8 +423,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 13
-push 13
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -435,8 +440,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 14
-push 14
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -454,8 +457,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 15
-push 15
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -473,8 +474,6 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 16
-push 16
-add esp, 4
 call 0x8:processManager
 add esp, 4
 pop eax

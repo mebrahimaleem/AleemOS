@@ -3,7 +3,8 @@
 //provides declarations for shared kernel data structures and functions
 
 void kernel(void);
-void processManager(uint32_t check, uint32_t eip);
+void processManager(uint32_t check, uint32_t cs);
+uint32_t sysCall(uint32_t call, uint32_t params, uint32_t cs);
 
 typedef struct MemoryMapEntry {
 	volatile uint64_t base;

@@ -276,6 +276,8 @@ void kernel(void){
 	defApp->ebp = defAppBP + 0x400000;
 	defApp->eip = entry;
 	defApp->cr3 = (uint32_t)defAppPD;
+	defApp->IDN = 1;
+	defApp->argc = 0;
 
 	setEventTrack(1);
 	clearVGA();
@@ -285,10 +287,28 @@ hang:
 	while (1) asm volatile ("hlt" : : : "memory");
 }
 
-void processManager(uint32_t cs, uint32_t check){
+uint32_t last_exitcode = 0;
 
+uint32_t sysCall(uint32_t call, uint32_t params, uint32_t cs){
+	switch (call){
+		case 0: //kill(exitcode)
+			last_exitcode = params;
+			killProcess();
+			kernel();
+			break;
+		default:
+			break;
+	}
+
+	//We need to execute a far return
+	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
+	return 0;
+}
+
+void processManager(uint32_t check, uint32_t cs){
 	//Check for kill process
 	if (check == 0){
+		last_exitcode = 1;
 		killProcess();
 
 		//If killProcess returned it means that it failed to start the previous process (probably because it doesn't exist)
