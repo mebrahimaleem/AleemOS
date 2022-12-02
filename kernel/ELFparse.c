@@ -63,7 +63,6 @@ uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* size){
 	return 0;
 }
 
-#include "basicio.h"
 uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile ent){
 	Elf32sheader* shead;
 	Elf32pheader* phead;
@@ -79,9 +78,7 @@ uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile
 
 	*ent = entry;
 	for (Elf32Half i = 0; i < snum; i++){
-		if (strcmp((uint8_t*)".text", (uint8_t*)((uint32_t)strtbl + shead[i].name)) == 1 || 
-				strcmp((uint8_t*)".data", (uint8_t*)((uint32_t)strtbl + shead[i].name)) == 1 || 
-				strcmp((uint8_t*)".rodata", (uint8_t*)((uint32_t)strtbl + shead[i].name)) == 1)
+		if (shead[i].type == 1 && (shead[i].flags & 2) == 2)
 			for (Elf32Word j = 0; j < shead[i].size; j++){
 				sigA = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0xFFF;
 				trnI = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0x3FF000;
@@ -90,7 +87,7 @@ uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile
 				*(uint8_t*)sigA = *(src + shead[i].offs + j);
 			}
 
-		else if (strcmp((uint8_t*)".bss", (uint8_t*)(uint32_t)strtbl[shead[i].name]) == 1)
+		else if (shead[i].type == 8 && (shead[i].flags & 2) == 2)
 			for (Elf32Word j = 0; j < shead[i].size; j++){
 				sigA = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0xFFF;
 				trnI = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0x3FF000;

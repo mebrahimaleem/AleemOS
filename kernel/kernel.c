@@ -278,8 +278,14 @@ void kernel(void){
 	defApp->cr3 = (uint32_t)defAppPD;
 	defApp->IDN = 1;
 	defApp->argc = 0;
+	
 
-	setEventTrack(1);
+	//Enable cursor
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, (inb(0x3D5 & 0xC0) | 0));
+	outb(0x3D4, 0x0B);
+	outb(0x3D5, (inb(0x3D5 & 0xC0) | 15));
+
 	clearVGA();
 	createProcess(defApp, 0);
 
@@ -287,25 +293,37 @@ hang:
 	while (1) asm volatile ("hlt" : : : "memory");
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 uint32_t last_exitcode = 0;
 
-uint32_t sysCall(uint32_t call, uint32_t params, uint32_t cs){
+uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
+	uint32_t ret = 0;
 	switch (call){
 		case 0: //kill(exitcode)
 			last_exitcode = params;
 			killProcess();
 			kernel();
 			break;
+		case 1: //printchar(char)
+			vgaprintchar((uint8_t)params, 0x0F);
+			break;
+		case 2: //blink(addr)
+			outb(0x3D4, 0x0F);
+			outb(0x3D5, (uint8_t)(params & 0xFF));
+			outb(0x3D4, 0x0E);
+			outb(0x3D5, (uint8_t)((params >> 8) & 0xFF));
+			break;
 		default:
 			break;
 	}
 
 	//We need to execute a far return
-	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
+	asm volatile ("mov eax, %0 \n leave \n retf" : : "m"(ret), "m"(cs) : "memory");
 	return 0;
 }
 
-void processManager(uint32_t check, uint32_t cs){
+void processManager(uint32_t cs, uint32_t check){
 	//Check for kill process
 	if (check == 0){
 		last_exitcode = 1;
@@ -363,3 +381,4 @@ void processManager(uint32_t check, uint32_t cs){
 	//We need to execute a far return
 	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
 }
+#pragma GCC pop_options

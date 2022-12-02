@@ -9,6 +9,8 @@
 
 processState* processStack = 0;
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 //Start a process
 void startProcess(processState* state, uint8_t toStart){
 	GDT[5].type = 0x9;
@@ -25,11 +27,12 @@ void startProcess(processState* state, uint8_t toStart){
 	UTSS->ebp = state->ebp;
 	UTSS->eip = state->eip;
 	UTSS->eflags = state->eflags;
-
+	
 	asm volatile ("pushf \n pop ecx \n and ecx, 0xFFC0802A \n or ecx, 0x4200 \n mov %1, ecx \n \
 			mov ax, 0x23 \n mov dx, ax \n mov es, ax \n mov fs, ax \n mov gs, ax \n \
-		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" : : "b"(state->eip), "m"(state->eflags): "memory");
+		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" :  "+b"(state->eip) : "m"(state->eflags): "memory");
 }
+#pragma GCC pop_options
 
 
 //Creates and starts a new process with the processState 'state'

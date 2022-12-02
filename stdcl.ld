@@ -4,8 +4,11 @@ OUTPUT_FORMAT(elf32-i386)
 
 INPUT
 (
-	build/stdc.elf
+	build/stdc/crt0.o
+	build/stdc/stdio.o
 )
+
+OUTPUT(build/stdc.elf)
 
 SECTIONS {
 	.text : {

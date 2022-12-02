@@ -165,22 +165,23 @@ UIDT_end:
 [extern sysCall]
 ISR_SYSCALL:
 cli
+mov esp, eax
 pop ebx
 pop ecx
 pushad
 mov ebp, esp
+mov esp, 0xFFFFFFE4
 mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax
-push 0
 push ebx
 push ecx
-add esp, 4
 call 0x8:sysCall
-add esp, 4
+add esp, 8
 pop ebx
 mov cr3, ebx
+mov esp, ebp
 pop edi
 pop esi
 pop ebp
@@ -189,6 +190,7 @@ pop ebx
 pop edx
 pop ecx
 add esp, 4
+mov esp, 0xFFFFFFFE8
 sti
 iret
 

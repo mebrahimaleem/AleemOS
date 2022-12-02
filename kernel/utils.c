@@ -111,3 +111,9 @@ inline uint8_t strcmp(uint8_t* str1, uint8_t* str2){
 	if (*i != *(j+1)) return 0;
 	return 1;
 }
+
+inline uint32_t strlen(uint8_t* str){
+	uint32_t ret = 0;
+	for (uint8_t* i = str; *i != 0; i++) ret++;
+	return ret;
+}

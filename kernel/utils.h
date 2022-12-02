@@ -13,3 +13,6 @@ extern void sleepms(uint32_t time);
 
 //Compares two string
 extern uint8_t strcmp(uint8_t* str1, uint8_t* str2);
+
+//Gets the lenght of a string
+extern uint32_t strlen(uint8_t* str);

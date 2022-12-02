@@ -3,7 +3,7 @@ CWARN := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wwrite-strings -Wmiss
 
 #CWARN_IGN := -Wcast-align
 
-CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c
+CFLAGS := $(CWARN) -masm=intel -O2 -m32 -fno-pie -ffreestanding -c
 
 CC := gcc
 
@@ -20,10 +20,13 @@ KERNEL_SRC := $(shell find kernel/ -type f -name "*.c")
 DRIVERS_SRC := $(shell find drivers/ -type f -name "*.c")
 KERNEL_HEAD := $(shell find kernel/ -type f -name "*.h")
 DRIVERS_HEAD := $(shell find drivers/ -type f -name "*.h")
+STDC_HEAD := $(shell find stdc/ -type f -name "*.h")
+STDC_SRC := $(shell find stdc/ -type f -name "*.c")
 
 FLAT_BIN := $(patsubst boot/%.asm,build/%.bin,$(BOOT_ASM))
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.elf,$(KERNEL_SRC))
 DRIVERS_OBJ := $(patsubst drivers/%.c,build/%.elf,$(DRIVERS_SRC))
+STDC_OBJ := $(patsubst stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
 .PHONY: all
 all: os Makefile
@@ -70,9 +73,15 @@ $(KERNEL_OBJ): build/%.elf: kernel/%.c kernel/%.h Makefile
 $(DRIVERS_OBJ): build/%.elf: drivers/%.c drivers/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-build/sh.elf : defapp/* build/stdc/crt0.o Makefile
-	@$(CC) $(CFLAGS) defapp/sh.c -o build/sh.o
+build/sh.elf : defapp/* build/stdc.elf userlandl.ld Makefile
+	@$(CC) $(CFLAGS) -I stdc/ defapp/sh.c -o build/sh.o
 	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o
+
+build/stdc.elf : build/stdc/crt0.o $(STDC_OBJ) stdcl.ld Makefile
+	@ld -r -melf_i386 -T stdcl.ld
 
 build/stdc/crt0.o : stdc/crt0.asm Makefile
 	@$(E_NASM) -o $@ $<
+
+$(STDC_OBJ) : build/stdc/%.o: stdc/%.c stdc/%.h Makefile
+	@$(CC) $(CFLAGS) $< -o $@

@@ -10,7 +10,8 @@
 volatile uint8_t* volatile vgacursor = (volatile uint8_t* volatile)0xb8000;
 
 inline void clearVGA(){
-	for (volatile uint8_t* volatile i = (volatile uint8_t* volatile)0xb8000; (uint32_t)i < 0xb8000 + 25 * 80 * 2; i++) *i = 0;
+	for (volatile uint8_t* volatile i = (volatile uint8_t* volatile)0xb8000; (uint32_t)i < 0xb8000 + 25 * 80 * 2; i += 2) *i = 0;
+	for (volatile uint8_t* volatile i = (volatile uint8_t* volatile)0xb8001; (uint32_t)i < 0xb8000 + 25 * 80 * 2; i += 2) *i = 0x0F;
 	vgacursor = (volatile uint8_t* volatile)0xb8000;
 }
 
@@ -20,12 +21,13 @@ inline void put(volatile char str, volatile uint8_t x, volatile uint8_t y, volat
 	return;
 }
 
-inline void vgaprint(volatile char* volatile str, volatile uint8_t col){
+void vgaprint(volatile char* volatile str, volatile uint8_t col){
 	for (volatile uint8_t* volatile i = (volatile uint8_t* volatile)str; *i != 0; i++){
 		//Check if we need to scroll
 		if ((uint32_t)vgacursor == 0xb8000 + (25 * 80 * 2)){
 			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *(j - 160) = *j; //Scroll
-			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *j = 0; //Clear last line
+			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2) *j = 0; //Clear last line
+			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8001 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2) *j = 0x0F;
 			vgacursor -= 160; //Move cursor
 		}
 
@@ -49,7 +51,7 @@ inline void vgaprint(volatile char* volatile str, volatile uint8_t col){
 
 		else if (*i == '\r') ; //Ignore
 		else if (*i == '\b'){ //Backspace
-			*(--vgacursor) = 0;
+			*(--vgacursor) = 0x0F;
 			*(--vgacursor) = 0;
 			if ((uint32_t)vgacursor < 0xb8000) vgacursor = (volatile uint8_t* volatile)0xb8000;
 			else if (((uint32_t)vgacursor - 0xb8000) % 160 == 158) while ((uint32_t)(*(vgacursor-2) == 0 && (uint32_t)vgacursor > 0xb8000)) vgacursor -= 2;
@@ -70,4 +72,13 @@ inline void vgaprintint(uint32_t num, uint8_t base, uint8_t col){
 	volatile char* volatile str = (volatile char* volatile)uint32_to_string(num, base);
 	vgaprint(str, col);
 	free(str);
+}
+
+void vgaprintchar(uint8_t c, uint8_t col){
+	uint8_t* s = malloc(2);
+	s[0] = c;
+	s[1] = 0;
+	vgaprint((volatile char* volatile)s, col);
+	free(s);
+	return;
 }

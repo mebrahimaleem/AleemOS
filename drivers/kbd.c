@@ -6,6 +6,7 @@
 #include "kbd.h"
 #include "../kernel/portio.h"
 #include "../kernel/memory.h"
+#include "../kernel/basicio.h"
 
 volatile KBDEventQueue* volatile KBDRoot = 0;
 volatile KBDEventQueue* volatile KBDNextEvent = 0;
@@ -32,6 +33,8 @@ inline void KBDResetMods(){
 	keystroke.scrLk = 0;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 void ISR21_handler(uint32_t byte){
 	if (kbdEventTrack == 0) return;
 
@@ -94,8 +97,10 @@ void ISR21_handler(uint32_t byte){
 
 	keystroke.E0 = 0;
 	keystroke.E1 = 0;
+
 	return;
 }
+#pragma GCC pop_options
 
 inline char toAscii(uint32_t keycode){
 	if (keystroke.lShft == 1 || keystroke.rShft == 1 || keystroke.capLk == 1)
