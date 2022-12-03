@@ -11,3 +11,5 @@ extern void vgaprint(volatile char* volatile str, volatile uint8_t col);
 extern void vgaprintint(uint32_t num, uint8_t base, uint8_t col);
 
 extern void vgaprintchar(uint8_t c, uint8_t col);
+
+extern volatile uint8_t* volatile vgacursor;

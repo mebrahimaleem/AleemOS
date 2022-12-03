@@ -16,4 +16,4 @@ extern void ISR21_handler(uint32_t byte);
 
 extern char toAscii(uint32_t keycode);
 
-extern void setEventTrack(uint8_t setting);
+extern void setKBDEventTrack(uint8_t setting);

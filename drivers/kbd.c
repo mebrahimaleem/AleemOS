@@ -36,7 +36,7 @@ inline void KBDResetMods(){
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 void ISR21_handler(uint32_t byte){
-	if (kbdEventTrack == 0) return;
+	if ((kbdEventTrack & 0x1) == 0) return;
 
 	//First check if root is not already set
 	if (KBDRoot == 0){
@@ -97,7 +97,8 @@ void ISR21_handler(uint32_t byte){
 
 	keystroke.E0 = 0;
 	keystroke.E1 = 0;
-
+		
+	if (KBDRoot->keyCode == '\n' && (kbdEventTrack & 0x2) == 0) kbdEventTrack &= 0xFC;
 	return;
 }
 #pragma GCC pop_options
@@ -312,6 +313,14 @@ inline char toAscii(uint32_t keycode){
 			return ' ';
 		case 0x0E:
 			return '\b';
+		case (32768 + 0x4D):
+			return 0x10;
+		case (32768 + 0x4B):
+			return 0x11;
+		case (32768 + 0x50):
+			return 0x1F;
+		case (32768 + 0x48):
+			return 0x1E;
 		default:
 			break;
 	}
@@ -319,6 +328,6 @@ inline char toAscii(uint32_t keycode){
 	return 0; //Invalid keyscan
 }
 
-inline void setEventTrack(uint8_t setting){
+inline void setKBDEventTrack(uint8_t setting){
 	kbdEventTrack = setting;
 }

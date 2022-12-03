@@ -314,6 +314,24 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 			outb(0x3D4, 0x0E);
 			outb(0x3D5, (uint8_t)((params >> 8) & 0xFF));
 			break;
+		case 3: //getchar()
+			setKBDEventTrack(1);
+			while (1){
+				if (KBDNextEvent != 0){
+					ret = (uint32_t)toAscii(KBDNextEvent->keyCode);
+					KBDNextEvent = KBDNextEvent->next;
+					if (ret != 0){
+						vgaprintchar((uint8_t)ret, 0x0F);
+						asm volatile ("sti" : : : "memory");
+						break;
+					}
+				}
+				asm volatile ("sti \n hlt \n cli" : : : "memory");
+				continue;
+			}
+		case 4: //getcursorpos()
+			ret = (vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
+			break;
 		default:
 			break;
 	}

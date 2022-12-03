@@ -6,6 +6,7 @@ INPUT
 (
 	build/stdc/crt0.o
 	build/stdc/stdio.o
+	build/stdc/AleemOS.o
 )
 
 OUTPUT(build/stdc.elf)
