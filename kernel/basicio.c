@@ -8,6 +8,7 @@
 #include "utils.h"
 
 volatile uint8_t* volatile vgacursor = (volatile uint8_t* volatile)0xb8000;
+uint32_t backslock = 0xb8000;
 
 inline void clearVGA(){
 	for (volatile uint8_t* volatile i = (volatile uint8_t* volatile)0xb8000; (uint32_t)i < 0xb8000 + 25 * 80 * 2; i += 2) *i = 0;
@@ -29,6 +30,8 @@ void vgaprint(volatile char* volatile str, volatile uint8_t col){
 			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2) *j = 0; //Clear last line
 			for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8001 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2) *j = 0x0F;
 			vgacursor -= 160; //Move cursor
+			backslock -= 160;
+			if (backslock < 0xb8000) backslock = 0xb8000;
 		}
 
 		//Process escape codes
@@ -46,22 +49,26 @@ void vgaprint(volatile char* volatile str, volatile uint8_t col){
 				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *(j - 160) = *j; //Scroll
 				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *j = 0; //Clear last line
 				vgacursor -= 160; //Move cursor
+				backslock -= 160;
+				if (backslock < 0xb8000) backslock = 0xb8000;
 			}
 		}
 
 		else if (*i == '\r') ; //Ignore
 		else if (*i == '\b'){ //Backspace
-			*(--vgacursor) = 0x0F;
-			*(--vgacursor) = 0;
-			if ((uint32_t)vgacursor < 0xb8000) vgacursor = (volatile uint8_t* volatile)0xb8000;
-			else if (((uint32_t)vgacursor - 0xb8000) % 160 == 158) while ((uint32_t)(*(vgacursor-2) == 0 && (uint32_t)vgacursor > 0xb8000)) vgacursor -= 2;
+			if ((uint32_t)vgacursor > backslock){
+				*(--vgacursor) = 0x0F;
+				*(--vgacursor) = 0;
+				if ((uint32_t)vgacursor < 0xb8000) vgacursor = (volatile uint8_t* volatile)0xb8000;
+				else if (((uint32_t)vgacursor - 0xb8000) % 160 == 158) while ((uint32_t)(*(vgacursor-2) == 0 && (uint32_t)vgacursor > 0xb8000)) vgacursor -= 2;
+			}
 		}
 
 		else if (*i == 0x11){ //Left arrow
 			while (1){
 				vgacursor -= 2;
-				if ((uint32_t)vgacursor < 0xb8000){
-					vgacursor = (volatile uint8_t* volatile)0xb8000;
+				if ((uint32_t)vgacursor < backslock){
+					vgacursor = (volatile uint8_t* volatile)backslock;
 					break;
 				}
 				if (*vgacursor != 0) break;
@@ -71,7 +78,7 @@ void vgaprint(volatile char* volatile str, volatile uint8_t col){
 			vgacursor += 2;
 		}
 		else if (*i == 0x1E) { //Up arrow
-			if ((uint32_t)vgacursor - 160 >= 0xb8000)
+			if ((uint32_t)vgacursor - 160 >= backslock)
 				vgacursor = (volatile uint8_t* volatile)((vgacursor - 0xb8000) - (((uint32_t)vgacursor - 0xb8000) % 160) - 160 + 0xb8000);
 		}
 		else if (*i == 0x1F || *i == 0x10) { //Down arrow (or right arrow if it could not resolve)

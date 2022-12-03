@@ -300,7 +300,10 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
-			break;
+			params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+			backslock = (uint32_t)vgacursor;
+			goto blink;
+		blink:
 		case 2: //blink(addr)
 			outb(0x3D4, 0x0F);
 			outb(0x3D5, (uint8_t)(params & 0xFF));
@@ -315,8 +318,8 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 					KBDNextEvent = KBDNextEvent->next;
 					if (ret != 0){
 						vgaprintchar((uint8_t)ret, 0x0F);
-						asm volatile ("sti" : : : "memory");
-						break;
+						params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+						goto blink;
 					}
 				}
 				asm volatile ("sti \n hlt \n cli" : : : "memory");
