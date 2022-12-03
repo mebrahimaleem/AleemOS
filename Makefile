@@ -3,7 +3,7 @@ CWARN := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wwrite-strings -Wmiss
 
 #CWARN_IGN := -Wcast-align
 
-CFLAGS := $(CWARN) -masm=intel -O2 -m32 -fno-pie -ffreestanding -c
+CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c
 
 CC := gcc
 

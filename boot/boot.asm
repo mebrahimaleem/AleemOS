@@ -20,6 +20,11 @@ xor ah, ah
 mov al, 0x03
 int 0x10 
 
+mov ah, 1
+mov ch, 0
+mov cl, 15
+int 0x10
+
 ;Now we need to copy the kernel onto the RAM
 mov si, KERNEL_FNAME ;file to copy
 mov cx, 0xE000 ;Where to copy kernel

@@ -3,6 +3,7 @@
 #ifndef __STDC_ALEEMOS_C
 #define __STDC_ALEEMOS_C
 #include <stdint.h>
+#include "AleemOS.h"
 
 int blink(int x, int y){
 	asm volatile ("pushad \n push 2 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)(y * 80 + x)) : "memory");

@@ -56,7 +56,7 @@ void vgaprint(volatile char* volatile str, volatile uint8_t col){
 			if ((uint32_t)vgacursor < 0xb8000) vgacursor = (volatile uint8_t* volatile)0xb8000;
 			else if (((uint32_t)vgacursor - 0xb8000) % 160 == 158) while ((uint32_t)(*(vgacursor-2) == 0 && (uint32_t)vgacursor > 0xb8000)) vgacursor -= 2;
 		}
-		
+
 		else if (*i == 0x11){ //Left arrow
 			while (1){
 				vgacursor -= 2;

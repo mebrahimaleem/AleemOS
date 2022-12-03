@@ -279,13 +279,6 @@ void kernel(void){
 	defApp->IDN = 1;
 	defApp->argc = 0;
 	
-
-	//Enable cursor
-	outb(0x3D4, 0x0A);
-	outb(0x3D5, (inb(0x3D5 & 0xC0) | 0));
-	outb(0x3D4, 0x0B);
-	outb(0x3D5, (inb(0x3D5 & 0xC0) | 15));
-
 	clearVGA();
 	createProcess(defApp, 0);
 
@@ -330,7 +323,7 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 				continue;
 			}
 		case 4: //getcursorpos()
-			ret = (vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
+			ret = (uint32_t)(vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
 			break;
 		default:
 			break;

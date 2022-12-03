@@ -190,7 +190,7 @@ pop ebx
 pop edx
 pop ecx
 add esp, 4
-mov esp, 0xFFFFFFFE8
+mov esp, 0xFFFFFFE8
 sti
 iret
 
