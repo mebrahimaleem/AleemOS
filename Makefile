@@ -48,9 +48,11 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 	@cp build/boot.bin mnt/BOOT.BIN
 	@cp build/kernel.bin mnt/KERNEL.BIN
 	@cp build/sh.elf mnt/SH.ELF
+	@cp LICENSE mnt/LICENSE
 	@fatattr +rhs mnt/BOOT.BIN
 	@fatattr +rhs mnt/KERNEL.BIN
 	@fatattr -rhs mnt/SH.ELF
+	@fatattr +r -hs mnt/LICENSE
 	@umount mnt
 	@dd if=/dev/loop0 seek=512 of=build/FS.img
 	@losetup -d /dev/loop0
