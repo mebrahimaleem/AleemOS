@@ -107,7 +107,7 @@ KERNEL_DATA:
 MBR_SIG dd 0
 
 ;Address Range Descriptor Structure
-ARDS times 16*20 db 0xff
+ARDS times 16*20 db 0x0
 
 ;System TIME
 FRACTION_MS dd 0

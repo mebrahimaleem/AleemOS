@@ -5,7 +5,9 @@ OUTPUT_FORMAT(elf32-i386)
 INPUT
 (
 	build/stdc/crt0.o
+	build/stdc/stdlib.o
 	build/stdc/stdio.o
+	build/stdc/string.o
 	build/stdc/AleemOS.o
 )
 

@@ -7,6 +7,10 @@
 
 _start:
 
+[extern __PROCESS_HEAP_BASE]
+mov [__PROCESS_HEAP_BASE], ecx
+mov DWORD [ecx], 0
+
 push eax
 push ebx
 

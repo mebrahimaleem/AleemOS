@@ -3,6 +3,8 @@
 #ifndef __STDC_ALEEMOS_C
 #define __STDC_ALEEMOS_C
 #include <stdint.h>
+#include <stdarg.h>
+#include "stdlib.h"
 #include "AleemOS.h"
 
 int blink(int x, int y){
@@ -16,4 +18,5 @@ int cursorPos(){
 		: "=b"((uint32_t)ret) : : "memory"); //NOTE: esp-40 Should actually be esp-36, but gcc subtracts 4 (still compiles to esp-36, esp-36 would compile to esp-32)
 	return ret;
 }
+
 #endif

@@ -48,8 +48,8 @@ uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* size){
 		if (phead[i].type == 1){ 
 			if (phead[i].offs % 0x1000 != 0 || phead[i].vaddr % 0x1000 != 0) return 2; //ELF program not page aligned
 			for (Elf32Word j = 0; j < phead[i].msize; j += 0x1000){
-				last->paddr = phead[i].offs + j * 0x1000;
-				last->vaddr = phead[i].vaddr + j * 0x1000;
+				last->paddr = j;
+				last->vaddr = phead[i].vaddr + j;
 				last->next = malloc(sizeof(ElfPageList));
 				last = last->next;
 				last->next = 0;
@@ -73,27 +73,16 @@ uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile
 
 	if (parseElf(src, &shead, &phead, &snum, &pnum, &strtbl, &entry) != 0) return 1;
 
-	uint32_t sigA;
-	uint32_t trnI;
-
 	*ent = entry;
 	for (Elf32Half i = 0; i < snum; i++){
-		if (shead[i].type == 1 && (shead[i].flags & 2) == 2)
+		if (shead[i].type == 1 && (shead[i].flags & 2) == 2) //PROGBITS
 			for (Elf32Word j = 0; j < shead[i].size; j++){
-				sigA = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0xFFF;
-				trnI = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0x3FF000;
-				trnI /= 0x1000; //Get index in PT
-				sigA += (*(uint32_t*)(0x401000 + trnI * 4) & 0x3FF000) + (uint32_t)dst - 0x3000;
-				*(uint8_t*)sigA = *(src + shead[i].offs + j);
+				*(uint8_t*)(j + dst + shead[i].addr) = *(src + shead[i].offs + j);
 			}
 
-		else if (shead[i].type == 8 && (shead[i].flags & 2) == 2)
+		else if (shead[i].type == 8 && (shead[i].flags & 2) == 2) //NOBITS
 			for (Elf32Word j = 0; j < shead[i].size; j++){
-				sigA = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0xFFF;
-				trnI = (uint32_t)(dst + shead[i].addr + j - 0x3000) & 0x3FF000;
-				trnI /= 0x1000; //Get index in PT
-				sigA += (*(uint32_t*)(0x401000 + trnI * 4) & 0x3FF000) + (uint32_t)dst - 0x3000;
-				*(uint8_t*)sigA = 0;
+				*(uint8_t*)(j + dst + shead[i].addr) = 0;
 			}
 	}
 

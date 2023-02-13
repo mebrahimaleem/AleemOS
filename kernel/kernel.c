@@ -57,12 +57,14 @@ void kernel(void){
 	//Setup keyboard
 	KBDResetMods();
 	
-	//First we need to add 2 new page tables
-	for (uint32_t* i = (uint32_t*)(0x400000 - 0x1000); i < (uint32_t*)0x400000; i++)
-		*i = (((uint32_t)(i) + 0x1000 - 0x400000)/4 * 0x1000 + 0x400000) | 3;
+	//For commenting purposes, page divisions are the continous blocks of 4MB of RAM (that a PT defines)
+	//First we need to add a new page table
 
 	for (uint32_t* i = (uint32_t*)(0x400000 - 0x2000); i < (uint32_t*)(0x400000 - 0x1000); i++)
-		*i = (((uint32_t)(i) + 0x2000 - 0x400000)/4 * 0x1000) | 3;
+		*i = (((uint32_t)(i) + 0x2000 - 0x400000)/4 * 0x1000) | 3; //High kernel mapping, maps the final page division to the first physical memory block
+
+	for (uint32_t* i = (uint32_t*)(0x400000 - 0x1000); i < (uint32_t*)0x400000; i++)
+		*i = (((uint32_t)(i) + 0x1000 - 0x400000)/4 * 0x1000 + 0x400000) | 3; //Spare page table (later used when creating processes)
 
 	*(uint32_t*)0xc004 = (0x400000 - 0x1000) | 3;
 	*(uint32_t*)(0xd000-4) = (0x400000 - 0x2000) | 3;
@@ -78,39 +80,17 @@ void kernel(void){
 	*(GDT_ptr*)(0xFFC06138) = *(GDT_ptr*)k_ugdtd;
 	*(IDT_ptr*)(0xFFC0613E) = *(IDT_ptr*)k_uidtd;
 
-	//Get address info from ELF
-	ElfPageList* pages;
-	uint32_t sz;
+	//Setup process sections and paging structures	
+	resetProcessDivs();
+	processSetup defAppSetup = setupProcess((uint8_t*)0x800);
 
-	if (calcELF((uint8_t*)0x800, &pages, &sz) != 0){
-		vgaprint((volatile char* volatile)"ERROR! The executable is not supported by this device\n.", 0x04);
+	if (defAppSetup.res != 0){
+		vgaprint((volatile char* volatile)"ERROR [", 0x0F);
+		vgaprintint(defAppSetup.res, 10, 0x0F);
+		vgaprint((volatile char* volatile)"] : Bad Executable", 0x0F);
+
 		goto hang;
 	}
-
-	defAppBP = sz - (sz % 0x400000);
-	uint32_t* defAppPD = (uint32_t*)0x400000;
-	uint32_t* defAppPT = (uint32_t*)(0x400000 + 0x1000);
-	uint32_t* highPT = (uint32_t*)(0x400000 + 0x2000);
-
-	uint32_t availP = 0;
-	for (ElfPageList* i = pages; i->next != 0; i = i->next){
-		defAppPT[(i->vaddr - defAppBP) / 0x1000] = (availP + 0x403000) | 7;
-		availP += 0x1000;
-	}
-
-	defAppPT[1023] = (availP + 0x403000) | 7; //Stack page
-
-	for (uint32_t i = 0; i < 1024; i++) 
-		highPT[i] = (i * 0x1000) | 5; 
-
-	defAppPD[defAppBP / 0x400000] = (0x400000 + 0x1000) | 7;
-	defAppPD[1023] = (0x400000 + 0x2000) | 5;
-
-	if (copyELF((uint8_t*)0x800, (uint8_t*)0x400000 + 0x3000, &entry) != 0){ //Copy the file after we know the paging layout
-		vgaprint((volatile char* volatile)"ERROR! The executable is not supported by this device.\n", 0x04);
-		goto hang;
-	}
-
 	
 	//Create new system tables on the system data page
 	//GDT
@@ -233,51 +213,14 @@ void kernel(void){
 	KTSS->ldtd = 0;
 	KTSS->IOPB = 0x68;
 	
-	//User TSS
-	UTSS->link = 48;
-	UTSS->esp0 = 0xFFFFFFFc;
-	UTSS->ss0 = 16;
-	UTSS->esp1 = 0x7c00;
-	UTSS->ss1 = 16;
-	UTSS->esp2 = 0x7c00;
-	UTSS->ss2 = 16;
-	UTSS->cr3 = (uint32_t)defAppPD;
-	UTSS->eip = entry;
-	UTSS->eflags = 0x200;
-	UTSS->eax = 0;
-	UTSS->ecx = 0;
-	UTSS->edx = 0;
-	UTSS->ebx = 0;
-	UTSS->esp = defAppBP + 0x400000 - 4;
-	UTSS->ebp = defAppBP + 0x400000;
-	UTSS->esi = 0;
-	UTSS->edi = 0;
-	UTSS->es = 32 | 3;
-	UTSS->cs = 24 | 3;
-	UTSS->ss = 32 | 3;
-	UTSS->ds = 32 | 3;
-	UTSS->fs = 32 | 3;
-	UTSS->gs = 32 | 3;
-	UTSS->ldtd = 0;
-	UTSS->IOPB = 0x68;
-	
+	*UTSS = defAppSetup.utss;
+
 	//Setup system tables
 	setSysTables();
 
-	processState* defApp = malloc(sizeof(processState));
-	defApp->eax = 0;
-	defApp->ebx = 0;
-	defApp->ecx = 0;
-	defApp->edx = 0;
-	defApp->esi = 0;
-	defApp->edi = 0;
-	defApp->eflags = 0x200;
-	defApp->esp = defAppBP + 0x400000 - 4;
-	defApp->ebp = defAppBP + 0x400000;
-	defApp->eip = entry;
-	defApp->cr3 = (uint32_t)defAppPD;
+	processState* defApp = &defAppSetup.state;
 	defApp->IDN = 1;
-	defApp->argc = 0;
+	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
 	
 	clearVGA();
 	createProcess(defApp, 0);
@@ -311,6 +254,7 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 			outb(0x3D5, (uint8_t)((params >> 8) & 0xFF));
 			break;
 		case 3: //getchar()
+			break;
 			setKBDEventTrack(1);
 			while (1){
 				if (KBDNextEvent != 0){
@@ -319,6 +263,7 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 					if (ret != 0){
 						vgaprintchar((uint8_t)ret, 0x0F);
 						params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+						setKBDEventTrack(0);
 						goto blink;
 					}
 				}

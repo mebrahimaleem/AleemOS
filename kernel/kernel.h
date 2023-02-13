@@ -6,6 +6,10 @@ void kernel(void);
 void processManager(uint32_t check, uint32_t cs);
 uint32_t sysCall(uint32_t call, uint32_t params, uint32_t cs);
 
+typedef struct bool1 {
+	uint8_t b : 1;
+} bool1;
+
 typedef struct MemoryMapEntry {
 	volatile uint64_t base;
 	volatile uint64_t size;

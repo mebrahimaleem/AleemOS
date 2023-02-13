@@ -47,7 +47,9 @@ void vgaprint(volatile char* volatile str, volatile uint8_t col){
 			//Check if we need to scroll
 			if ((uint32_t)vgacursor == 0xb8000 + (25 * 80 * 2)){
 				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *(j - 160) = *j; //Scroll
-				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j++) *j = 0; //Clear last line
+				//Clear last line
+				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8000 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2 ) *j = 0;
+				for (volatile uint8_t* volatile j = (volatile uint8_t* volatile)(0xb8001 + 80 * 24 * 2); (uint32_t)j < 0xb8000 + 80 * 25 * 2; j += 2) *j = 0x0F;
 				vgacursor -= 160; //Move cursor
 				backslock -= 160;
 				if (backslock < 0xb8000) backslock = 0xb8000;
