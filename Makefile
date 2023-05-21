@@ -43,8 +43,8 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 	@cat build/VBR.bin > build/FS.img
 	@truncate -s 1440000 build/FS.img
 	@losetup -D
-	@losetup -o 0 /dev/loop0 build/FS.img
-	@mount /dev/loop0 mnt
+	@losetup -o 0 /dev/loop15 build/FS.img
+	@mount /dev/loop15 mnt
 	@cp build/boot.bin mnt/BOOT.BIN
 	@cp build/kernel.bin mnt/KERNEL.BIN
 	@cp build/sh.elf mnt/SH.ELF
@@ -54,8 +54,8 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 	@fatattr -rhs mnt/SH.ELF
 	@fatattr +r -hs mnt/LICENSE
 	@umount mnt
-	@dd if=/dev/loop0 seek=512 of=build/FS.img
-	@losetup -d /dev/loop0
+	@dd if=/dev/loop15 seek=512 of=build/FS.img
+	@losetup -d /dev/loop15
 
 $(FLAT_BIN): build/%.bin: boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
