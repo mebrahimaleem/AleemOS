@@ -233,6 +233,7 @@ hang:
 #pragma GCC optimize("O0")
 uint32_t last_exitcode = 0;
 
+//sysCall is meant for handling system calls from userland
 uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 	uint32_t ret = 0;
 	switch (call){
@@ -282,6 +283,7 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 	return 0;
 }
 
+//processManager is meant for handling exception caused interupts, IRQs
 void processManager(uint32_t cs, uint32_t check){
 	//Check for kill process
 	if (check == 0){

@@ -7,6 +7,9 @@
 #include "stdlib.h"
 #include "AleemOS.h"
 
+
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 int blink(int x, int y){
 	asm volatile ("pushad \n push 2 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)(y * 80 + x)) : "memory");
 	return 0;
@@ -18,5 +21,6 @@ int cursorPos(){
 		: "=b"((uint32_t)ret) : : "memory"); //NOTE: esp-40 Should actually be esp-36, but gcc subtracts 4 (still compiles to esp-36, esp-36 would compile to esp-32)
 	return ret;
 }
+#pragma GCC pop_options
 
 #endif

@@ -8,6 +8,8 @@
 #include "stdlib.h"
 #include "AleemOS.h"
 
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 int printf(const char* format, ...){
 	va_list args;
 	va_start(args, format);
@@ -124,4 +126,5 @@ int scanf(const char* format, ...){
 
 	return (int)ret;
 }
+#pragma GCC pop_options
 #endif
