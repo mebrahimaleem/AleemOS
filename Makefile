@@ -42,7 +42,6 @@ build/os.img: build/MBR.bin build/FS.img Makefile
 build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
 	@cat build/VBR.bin > build/FS.img
 	@truncate -s 1440000 build/FS.img
-	@losetup -D
 	@losetup -o 0 /dev/loop15 build/FS.img
 	@mount /dev/loop15 mnt
 	@cp build/boot.bin mnt/BOOT.BIN
