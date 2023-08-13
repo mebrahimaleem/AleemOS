@@ -30,14 +30,14 @@ DRIVERS_OBJ := $(patsubst drivers/%.c,build/%.elf,$(DRIVERS_SRC))
 STDC_OBJ := $(patsubst stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
 .PHONY: all
-all: os Makefile
+all: os dbl Makefile
 
 .PHONY: os
 os: build/os.img Makefile
 	@echo "Done Building OS!"
 
 .PHONY: dbl
-dbl:
+dbl: build/kentry.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile linkd.ld
 	@$(LD) $(LDDFLAGS)
 
 build/os.img: build/MBR.bin build/FS.img Makefile
@@ -64,7 +64,7 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 $(FLAT_BIN): build/%.bin: boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
 
-build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile
+build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	@$(LD) $(LDFLAGS)
 
 build/kentry.elf: kernel/kentry.asm Makefile
