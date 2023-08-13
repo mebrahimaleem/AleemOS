@@ -3,7 +3,7 @@ CWARN := -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wwrite-strings -Wmiss
 
 #CWARN_IGN := -Wcast-align
 
-CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c
+CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c -g -F dwarf
 
 CC := gcc
 
@@ -11,7 +11,8 @@ B_NASM := nasm -f bin
 E_NASM := nasm -f elf
 
 LD := ld
-LDFLAGS := -melf_i386 -T link.ld
+LDFLAGS := -melf_i386 -T link.ld -s
+LDDFLAGS := -melf_i386 -T linkd.ld
 
 BOOT_RECORDS := build/MBR.bin build/VBR.bin
 
@@ -34,6 +35,10 @@ all: os Makefile
 .PHONY: os
 os: build/os.img Makefile
 	@echo "Done Building OS!"
+
+.PHONY: dbl
+dbl:
+	@$(LD) $(LDDFLAGS)
 
 build/os.img: build/MBR.bin build/FS.img Makefile
 	@cat build/MBR.bin build/FS.img > build/os.img
