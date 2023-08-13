@@ -12,6 +12,7 @@
 #include "portio.h"
 #include "memory.h"
 #include "utils.h"
+#include "signals.h"
 #include "process.h"
 #include "../drivers/kbd.h"
 #include "ELFparse.h"
@@ -56,6 +57,9 @@ void kernel(void){
 
 	//Setup keyboard
 	KBDResetMods();
+
+	//Setup signals
+	initSignals();
 	
 	//For commenting purposes, page divisions are the continous blocks of 4MB of RAM (that a PT defines)
 	//First we need to add a new page table

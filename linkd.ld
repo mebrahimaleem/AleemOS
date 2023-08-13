@@ -10,6 +10,7 @@ INPUT
 	build/portio.elf
 	build/basicio.elf
 	build/utils.elf
+	build/signals.elf
 	build/kbd.elf
 	build/ELFparse.elf
 	build/process.elf
