@@ -5,8 +5,10 @@
 #include <stdint.h>
 
 #include "../kernel/portio.h"
+#include "../kernel/basicio.h"
 #include "../kernel/memory.h"
 #include "pci.h"
+#include "../kernel/kernel.h"
 
 #define CONFIG_ADDRESS 0xCF8
 #define CONFIG_DATA 0xCFC
@@ -42,12 +44,11 @@ PCIEntry* getPCIDevices() {
 
 			last->bus = (uint8_t)bus;
 			last->dev = dev;
+			last->irqLine = _pciReadDWord((uint8_t)bus, dev, 0, 0x3C) & 0xFF; //Always works regarldess of header type
+			last->func = 0; //TODO: Later implement for adding other functions to the PCI device list
 			last->next = 0;
 	
 			switch (_pciReadDWord((uint8_t)bus, dev, 0, 8) >> 8) {
-				case 0x0C0330:
-					last->type = USB_XHCI;
-					break;
 				case 0x0C0300:
 					last->type = USB_UHCI;
 					break;
@@ -56,6 +57,9 @@ PCIEntry* getPCIDevices() {
 					break;
 				case 0x0C0320:
 					last->type = USB_EHCI;
+					break;
+				case 0x0C0330:
+					last->type = USB_XHCI;
 					break;
 				case 0x0C0380:
 					last->type = USB_NOIF;
@@ -71,3 +75,16 @@ PCIEntry* getPCIDevices() {
 
 	return devs;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+void ISR2AB_handler(uint32_t opt0) {
+	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
+		if (i->irqLine == (opt0 & 0xFF) && (_pciReadDWord(i->bus, i->dev, i->func, 0x1) & 0x80000) == 0x80000) {
+			//TODO: handle device
+			return;
+		}
+	}
+	return;
+}
+#pragma GCC pop_options

@@ -15,6 +15,8 @@ typedef enum {
 typedef struct PCIEntry {
 	uint8_t bus;
 	uint8_t dev;
+	uint8_t func;
+	uint8_t irqLine;
 	PCIType type;
 	struct PCIEntry* next;
 } PCIEntry;
@@ -22,3 +24,4 @@ typedef struct PCIEntry {
 extern uint32_t _pciReadDWord(uint8_t bus, uint8_t dev, uint8_t func, uint8_t addr);
 extern void _pciWriteDWord(uint8_t bus, uint8_t dev, uint8_t func, uint8_t addr, uint32_t dat);
 extern PCIEntry* getPCIDevices(void);
+extern void ISR2AB_handler(uint32_t opt0);

@@ -39,6 +39,8 @@ volatile KernelData* volatile kdata;
 
 extern void setSysTables(void);
 
+PCIEntry* pciEntries;
+
 //Create new system tables	
 TSS* volatile KTSS = (TSS* volatile)0xFFC06068;
 TSS* volatile UTSS = (TSS* volatile)0xFFC060D0;
@@ -63,7 +65,7 @@ void kernel(void){
 	initSignals();
 
 	//Setup PCI
-	PCIEntry* pciEntries = getPCIDevices();
+	pciEntries = getPCIDevices();
 	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
 		vgaprint((volatile char* volatile)"Found PCI Device. Bus: 0x", 0x0A);
 		vgaprintint(i->bus, 16, 0x0A);
@@ -71,6 +73,10 @@ void kernel(void){
 		vgaprintint(i->dev, 16, 0x0A);
 		vgaprint((volatile char* volatile)" Type: ", 0x0A);
 		vgaprintint(i->type, 10, 0x0A);
+		vgaprint((volatile char* volatile)" Func: ", 0x0A);
+		vgaprintint(i->func, 10, 0x0A);
+		vgaprint((volatile char* volatile)" Irq Line: 0x", 0x0A);
+		vgaprintint((i->irqLine & 0xFF) + 0x20, 16, 0x0A);
 		vgaprint((volatile char* volatile)"\n", 0x0A);
 	}
 

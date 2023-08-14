@@ -135,7 +135,9 @@ typedef struct TSS {
 	uint16_t IOPB;
 } TSS;
 
+
 extern volatile KernelData* volatile kdata;
 extern TSS* volatile KTSS;
 extern TSS* volatile UTSS;
 extern DTentry* volatile GDT;
+extern struct PCIEntry* pciEntries;
