@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "signals.h"
 #include "process.h"
+#include "../drivers/pci.h"
 #include "../drivers/kbd.h"
 #include "ELFparse.h"
 
@@ -60,6 +61,20 @@ void kernel(void){
 
 	//Setup signals
 	initSignals();
+
+	//Setup PCI
+	PCIEntry* pciEntries = getPCIDevices();
+	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
+		vgaprint((volatile char* volatile)"Found PCI Device. Bus: 0x", 0x0A);
+		vgaprintint(i->bus, 16, 0x0A);
+		vgaprint((volatile char* volatile)" Device: 0x", 0x0A);
+		vgaprintint(i->dev, 16, 0x0A);
+		vgaprint((volatile char* volatile)" Type: ", 0x0A);
+		vgaprintint(i->type, 10, 0x0A);
+		vgaprint((volatile char* volatile)"\n", 0x0A);
+	}
+
+	goto hang;
 	
 	//For commenting purposes, page divisions are the continous blocks of 4MB of RAM (that a PT defines)
 	//First we need to add a new page table

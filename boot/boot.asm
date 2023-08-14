@@ -15,6 +15,25 @@ mov WORD [PARTION_OFFSET], si
 mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
+;Verify PCI support mechanism #1
+mov ax, 0xB101
+mov edi, 0
+int 0x1A
+cmp ah, 0
+jne pci_err
+and al, 1
+cmp al, 1
+jne pci_err
+jmp pci_ok
+
+pci_err:
+mov si, pci_err_msg
+call real_print
+.hang: jmp .hang
+pci_err_msg: db "FATAL: Failed to verify PCI mechanism #1 exists. System Hang.", 0
+
+pci_ok:
+
 ;Set the VGA video mode
 xor ah, ah
 mov al, 0x03
