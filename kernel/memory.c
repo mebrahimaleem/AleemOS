@@ -17,7 +17,7 @@ typedef struct BlockDescriptor {
 volatile BlockDescriptor* volatile HeapBase = (BlockDescriptor*)0x100000;
 
 //Sets up the kernel heap, root BlockDescriptor is @ 0x100000
-inline void initHeap(void){
+void initHeap(void){
 	HeapBase->flags = 0;
 	return;
 }
