@@ -33,7 +33,7 @@ PCIEntry* getPCIDevices() {
 	PCIEntry* last;
 	for (uint16_t bus = 0; bus < 256; bus++)
 		for (uint8_t dev = 0; dev < 32; dev++)
-			for (uint16_t func = 0; func < 256; func++) {	
+			for (uint16_t func = 0; func < 8; func++) {	
 				if ((_pciReadDWord((uint8_t)bus, dev, (uint8_t)func, 0) & 0xFFFF) == 0xFFFF) continue;
 				if (devs == 0)
 					devs = last = (PCIEntry*)malloc(sizeof(PCIEntry));
