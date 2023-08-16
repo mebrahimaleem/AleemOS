@@ -82,7 +82,7 @@ PCIEntry* getPCIDevices() {
 					vgaprintint(last->type, 10, 0x0A);
 
 					if (last->irqLine != 0) {
-						vgaprint((volatile char* volatile)" Irq Line: 0x", 0x0A);
+						vgaprint((volatile char* volatile)" IRQ: 0x", 0x0A);
 						vgaprintint((last->irqLine & 0xFF) + 0x20, 16, 0x0A);
 					}
 
