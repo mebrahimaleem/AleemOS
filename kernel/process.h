@@ -2,6 +2,9 @@
 //
 //This file has declarations for process management
 
+/*
+	Holds information on a process' state
+*/
 typedef struct processState {
 	uint32_t eax;
 	uint32_t ebx;
@@ -21,6 +24,9 @@ typedef struct processState {
 	uint32_t HS;
 } processState;
 
+/*
+	Structure to hold setup information for a new process
+*/
 typedef struct processSetup {
 	uint8_t res; //0 if process is ok, otherwise data is invalid
 	processState state; //processState for the new process
@@ -29,17 +35,36 @@ typedef struct processSetup {
 
 } processSetup;
 
-//Starts a process
+/*
+	Starts a process
+	state: Pointer to process starting state
+	toStart: 1 if process has never been started
+*/
 extern void startProcess(processState* state, uint8_t toStart);
 
-//Creates and starts a new process with the processState 'state'
+/*
+	Creates and starts a process
+	state: The state of the process (latest state)
+	cstate: The state for a process that has not been started (initial state)
+*/
 extern void createProcess(processState* state, processState* cstate);
 
-//Kill the current process and provides the next process to run, returns 0 if no processes remain
+/*
+	Kills the process and resumes the parent process
+
+	Returns 0 if no parent process exists
+*/
 extern uint32_t killProcess(void);
 
-//Creates paging structures for a new process
+/*
+	Creates paging structures for the process
+	src: Pointer to executable
+
+	Unlike the similar function in kernel/ELFParse.h, this function actually modifies the paging tables
+*/
 extern processSetup setupProcess(uint8_t* volatile src);
 
-//Resets process paging information - discards all process memory
+/*
+	Resets current running processes memory and paging structure
+*/
 extern void resetProcessDivs(void);
