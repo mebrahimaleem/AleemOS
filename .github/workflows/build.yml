@@ -1,0 +1,22 @@
+name: Build OS
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Install Packages
+        run: sudo apt install nasm fatattr
+      - name: Create Directories
+        run: mkdir build/ build/stdc/ mnt/
+      - name: Build OS
+        run: sudo make os
