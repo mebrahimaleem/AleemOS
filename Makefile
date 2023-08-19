@@ -16,18 +16,18 @@ LDDFLAGS := -melf_i386 -T linkd.ld
 
 BOOT_RECORDS := build/MBR.bin build/VBR.bin
 
-BOOT_ASM := $(shell find boot/ -type f -name "*.asm")
-KERNEL_SRC := $(shell find kernel/ -type f -name "*.c")
-DRIVERS_SRC := $(shell find drivers/ -type f -name "*.c")
-KERNEL_HEAD := $(shell find kernel/ -type f -name "*.h")
-DRIVERS_HEAD := $(shell find drivers/ -type f -name "*.h")
-STDC_HEAD := $(shell find stdc/ -type f -name "*.h")
-STDC_SRC := $(shell find stdc/ -type f -name "*.c")
+BOOT_ASM := $(shell find src/boot/ -type f -name "*.asm")
+KERNEL_SRC := $(shell find src/kernel/ -type f -name "*.c")
+DRIVERS_SRC := $(shell find src/drivers/ -type f -name "*.c")
+KERNEL_HEAD := $(shell find src/kernel/ -type f -name "*.h")
+DRIVERS_HEAD := $(shell find src/drivers/ -type f -name "*.h")
+STDC_HEAD := $(shell find src/stdc/ -type f -name "*.h")
+STDC_SRC := $(shell find src/stdc/ -type f -name "*.c")
 
-FLAT_BIN := $(patsubst boot/%.asm,build/%.bin,$(BOOT_ASM))
-KERNEL_OBJ := $(patsubst kernel/%.c,build/%.elf,$(KERNEL_SRC))
-DRIVERS_OBJ := $(patsubst drivers/%.c,build/%.elf,$(DRIVERS_SRC))
-STDC_OBJ := $(patsubst stdc/%.c,build/stdc/%.o,$(STDC_SRC))
+FLAT_BIN := $(patsubst src/boot/%.asm,build/%.bin,$(BOOT_ASM))
+KERNEL_OBJ := $(patsubst src/kernel/%.c,build/%.elf,$(KERNEL_SRC))
+DRIVERS_OBJ := $(patsubst src/drivers/%.c,build/%.elf,$(DRIVERS_SRC))
+STDC_OBJ := $(patsubst src/stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
 .PHONY: all
 all: os dbl Makefile
@@ -61,33 +61,33 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 	@dd if=/dev/loop15 seek=512 of=build/FS.img
 	@losetup -d /dev/loop15
 
-$(FLAT_BIN): build/%.bin: boot/%.asm Makefile
+$(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
 
 build/kernel.bin: build/kentry.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	@$(LD) $(LDFLAGS)
 
-build/kentry.elf: kernel/kentry.asm Makefile
+build/kentry.elf: src/kernel/kentry.asm Makefile
 	@$(E_NASM) -o $@ $<
 
 build/kernel.elf: $(KERNEL_HEAD) $(DRIVERS_HEAD) link.ld Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(KERNEL_OBJ): build/%.elf: kernel/%.c kernel/%.h Makefile
+$(KERNEL_OBJ): build/%.elf: src/kernel/%.c src/kernel/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(DRIVERS_OBJ): build/%.elf: drivers/%.c drivers/%.h Makefile
+$(DRIVERS_OBJ): build/%.elf: src/drivers/%.c src/drivers/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
-build/sh.elf : defapp/* build/stdc.elf userlandl.ld Makefile
-	@$(CC) $(CFLAGS) -I stdc/ defapp/sh.c -o build/sh.o
+build/sh.elf : src/defapp/* build/stdc.elf userlandl.ld Makefile
+	@$(CC) $(CFLAGS) -I src/stdc/ src/defapp/sh.c -o build/sh.o
 	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o
 
 build/stdc.elf : build/stdc/crt0.o $(STDC_OBJ) stdcl.ld Makefile
 	@ld -r -melf_i386 -T stdcl.ld
 
-build/stdc/crt0.o : stdc/crt0.asm Makefile
+build/stdc/crt0.o : src/stdc/crt0.asm Makefile
 	@$(E_NASM) -o $@ $<
 
-$(STDC_OBJ) : build/stdc/%.o: stdc/%.c stdc/%.h Makefile
+$(STDC_OBJ) : build/stdc/%.o: src/stdc/%.c src/stdc/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
