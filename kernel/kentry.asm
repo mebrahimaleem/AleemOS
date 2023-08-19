@@ -44,6 +44,20 @@ mov edi, [IDT_st]
 add edi, (0x21 * 8)
 mov ecx, 2
 rep movsd
+
+;Install ISR 0x2a
+mov esi, ISR2A
+mov edi, [IDT_st]
+add edi, (0x2a * 8)
+mov ecx, 2
+rep movsd
+
+;Install ISR 0x2b
+mov esi, ISR2B
+mov edi, [IDT_st]
+add edi, (0x2b * 8)
+mov ecx, 2
+rep movsd
 sti
 
 ;Pass idt_ptr to kernel
@@ -495,6 +509,20 @@ db 0
 db 0b10001111
 dw 0
 
+ISR2A:
+dw ISR2A_asm
+dw (8/8)<<3
+db 0
+db 0b10001111
+dw 0
+
+ISR2B:
+dw ISR2B_asm
+dw (8/8)<<3
+db 0
+db 0b10001111
+dw 0
+
 [extern ISR21_handler]
 
 ISR21_asm:
@@ -509,8 +537,42 @@ call ISR21_handler
 add esp, 0x4
 
 mov al, 0x20 ;Tell PIC we handled the interupt
+out 0xa0, al
 out 0x20, al
 
+popad
+sti
+iret
+
+[extern ISR2AB_handler]
+
+ISR2A_asm:
+cli
+pushad
+
+mov eax, 0x2a
+push eax
+call ISR2AB_handler
+add esp, 0x4
+
+mov al, 0x20 ;Tell PIC we handled the interupt
+out 0xa0, al
+out 0x20, al
+popad
+sti
+iret
+
+ISR2B_asm:
+cli
+pushad
+
+mov eax, 0x2b
+push eax
+call ISR2AB_handler
+add esp, 4
+
+mov al, 0x20
+out 0x20, al
 popad
 sti
 iret

@@ -212,3 +212,4 @@ extern TSS* volatile UTSS;
 	GDT
 */
 extern DTentry* volatile GDT;
+extern struct PCIEntry* pciEntries;

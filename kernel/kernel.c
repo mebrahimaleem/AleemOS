@@ -14,6 +14,8 @@
 #include "utils.h"
 #include "signals.h"
 #include "process.h"
+#include "../drivers/pci.h"
+#include "../drivers/xhci.h"
 #include "../drivers/kbd.h"
 #include "ELFparse.h"
 
@@ -38,6 +40,8 @@ volatile KernelData* volatile kdata;
 
 extern void setSysTables(void);
 
+PCIEntry* pciEntries;
+
 //Create new system tables	
 TSS* volatile KTSS = (TSS* volatile)0xFFC06068;
 TSS* volatile UTSS = (TSS* volatile)0xFFC060D0;
@@ -60,6 +64,12 @@ void kernel(void){
 
 	//Setup signals
 	initSignals();
+
+	//Setup PCI
+	pciEntries = getPCIDevices();
+	
+	//Setup XHCI
+	initXHCIDriver();
 	
 	//For commenting purposes, page divisions are the continous blocks of 4MB of RAM (that a PT defines)
 	//First we need to add a new page table
@@ -70,8 +80,20 @@ void kernel(void){
 	for (uint32_t* i = (uint32_t*)(0x400000 - 0x1000); i < (uint32_t*)0x400000; i++)
 		*i = (((uint32_t)(i) + 0x1000 - 0x400000)/4 * 0x1000 + 0x400000) | 3; //Spare page table (later used when creating processes)
 
-	*(uint32_t*)0xc004 = (0x400000 - 0x1000) | 3;
-	*(uint32_t*)(0xd000-4) = (0x400000 - 0x2000) | 3;
+	for (uint32_t* i = (uint32_t*)(0x400000 - 0x3000); i < (uint32_t*)(0x400000 - 0x2000); i++)
+		*i = 0; // Page table for drivers to use (to access IO Mapping Addresses)
+
+	*(uint32_t*)0xc004 = (0x400000 - 0x1000) | 3; // Second page division
+	*(uint32_t*)(0xd000-4) = (0x400000 - 0x2000) | 3; //Last page division
+	*(uint32_t*)(0xd000-8) = (0x400000 - 0x3000) | 3; // Second last Page division
+
+	uint16_t nextPT = 0;
+
+	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
+		if (i->type == USB_XHCI) {
+			nextPT = setupXHCIDevice(*i, nextPT);
+		}
+	}
 
 	//Copy IDT and ISRs to system data page (0x6000)
 	uint8_t* dest = (uint8_t*)0xFFC06200;

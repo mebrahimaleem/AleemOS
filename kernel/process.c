@@ -72,7 +72,7 @@ processSetup setupProcess(uint8_t* volatile src){
 
 	//Find page divisions (2) for the process
 	uint16_t pageDiv1 = 0, pageDiv2 = 0;
-	for (i = 1; i < 1023; i++){
+	for (i = 1; i < 1022; i++){
 		if (pageDivs[i].b == 1){
 			if (pageDiv1 == 0){
 				pageDiv1 = i;

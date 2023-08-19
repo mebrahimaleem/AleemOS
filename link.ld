@@ -11,6 +11,8 @@ INPUT
 	build/basicio.elf
 	build/utils.elf
 	build/signals.elf
+	build/pci.elf
+	build/xhci.elf
 	build/kbd.elf
 	build/ELFparse.elf
 	build/process.elf
