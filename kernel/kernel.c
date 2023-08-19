@@ -94,8 +94,6 @@ void kernel(void){
 			nextPT = setupXHCIDevice(*i, nextPT);
 		}
 	}
-	goto hang;
-
 
 	//Copy IDT and ISRs to system data page (0x6000)
 	uint8_t* dest = (uint8_t*)0xFFC06200;

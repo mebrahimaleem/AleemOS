@@ -26,10 +26,6 @@ uint64_t _xhciGetMMIO(PCIEntry ent) {
 }
 
 uint16_t setupXHCIDevice(PCIEntry ent, uint16_t avPT) {
-	uint32_t cmstat = _pciReadDWord(ent.bus, ent.dev, ent.func, 0x4);
-	_pciWriteDWord(ent.bus, ent.dev, ent.func, 0x4, cmstat & 0xFFFFFFFC); //Stop all unwanted PCI device behavior
-	_pciWriteDWord(ent.bus, ent.dev, ent.func, 0x4, cmstat); //Restore PCI command register state
-
 	uint64_t MMIOaddr = _xhciGetMMIO(ent);
 	if ((MMIOaddr >> 32) > 0) return avPT; // If address cannot be stored in 32 bits, we will skip this device (since this is a 32-bit OS)
 
