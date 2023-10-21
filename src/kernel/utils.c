@@ -3,9 +3,9 @@
 //provides implementations for generic utilities in AleemOS
 
 #include <stdint.h>
-#include "kernel.h"
-#include "memory.h"
-#include "utils.h"
+#include <kernel.h>
+#include <memory.h>
+#include <utils.h>
 
 //Converts an integer to string
 inline uint8_t* int32_to_string(int32_t num, uint8_t base){

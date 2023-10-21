@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-#include "signals.h"
-#include "memory.h"
+#include <signals.h>
+#include <memory.h>
 
 SignalQueue kSigs;
 SignalQueue* pSigs;

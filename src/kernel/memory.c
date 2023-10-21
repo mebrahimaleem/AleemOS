@@ -3,7 +3,7 @@
 //Implementation for Heap memory management functions
 
 #include <stdint.h>
-#include "memory.h"
+#include <memory.h>
 
 //The heap will be a linked list of BlockDescriptors. The next BlockDescriptor is 'size' bytes after the previous. Each descritor is 4 bytes large.
 

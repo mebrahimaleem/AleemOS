@@ -2,27 +2,9 @@
 //
 //provides declarations for shared kernel data structures and functions
 
-//#define KERNEL_DEBUG
+#define KERNEL_DEBUG
 
-/*
-	Function containing kernel setup code
-*/
-void kernel(void);
-
-/*
-	Called to manage intel reserved IRQs
-	check: The interrupt code (see implementation in kernel/kentry.asm)
-	cs: cs register value
-*/
-void processManager(uint32_t check, uint32_t cs);
-
-/*
-	Called to bridge userland to kernel
-	call: System call number (see implementation)
-	params: Pointer to parameter in userland (or the parameter itself)
-	cs: cs register value
-*/
-uint32_t sysCall(uint32_t call, uint32_t params, uint32_t cs);
+extern volatile uint16_t k_KDATA;
 
 /*
 	Structure to save memory on single bit booleans
@@ -198,7 +180,7 @@ typedef struct TSS {
 */
 extern volatile KernelData* volatile kdata;
 
-//TODO: Get rid of the TSS system (and maybe remove redundant code in the bootloader)
+//TODO: Get rid of the TSS system
 
 /*
 	Kernel TSS

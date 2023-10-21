@@ -3,9 +3,9 @@
 //This file provides implementations for reading ELF files
 
 #include <stdint.h>
-#include "memory.h"
-#include "utils.h"
-#include "ELFparse.h"
+#include <memory.h>
+#include <utils.h>
+#include <ELFparse.h>
 
 inline uint8_t parseElf(uint8_t* volatile src, Elf32sheader** shead, Elf32pheader** phead, Elf32Half* snum, Elf32Half* pnum, uint8_t** strtbl, uint32_t* entry){
 	Elf32header* volatile ehead = (Elf32header*)src;

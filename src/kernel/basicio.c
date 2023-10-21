@@ -3,9 +3,9 @@
 //IO library for the kernel using VGA
 
 #include <stdint.h>
-#include "basicio.h" 
-#include "memory.h"
-#include "utils.h"
+#include <basicio.h>
+#include <memory.h>
+#include <utils.h>
 
 volatile uint8_t* volatile vgacursor = (volatile uint8_t* volatile)0xb8000;
 uint32_t backslock = 0xb8000;

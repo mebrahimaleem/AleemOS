@@ -4,11 +4,11 @@
 
 #include <stdint.h>
 
-#include "../kernel/portio.h"
-#include "../kernel/basicio.h"
-#include "../kernel/memory.h"
-#include "pci.h"
-#include "../kernel/kernel.h"
+#include <portio.h>
+#include <basicio.h>
+#include <memory.h>
+#include <pci.h>
+#include <kernel.h>
 
 #define CONFIG_ADDRESS 0xCF8
 #define CONFIG_DATA 0xCFC

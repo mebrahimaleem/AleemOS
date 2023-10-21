@@ -79,8 +79,8 @@ mov [k_uisrs], eax
 mov eax, UGDT_ptr
 mov [k_ugdtd], eax
 
-[extern kernel]
-jmp kernel
+[extern boot2]
+jmp boot2
 
 UGDT_ptr:
 dw 55

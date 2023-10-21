@@ -3,12 +3,12 @@
 //Implementations for process management
 
 #include <stdint.h>
-#include "kernel.h"
-#include "memory.h"
-#include "basicio.h"
-#include "ELFparse.h"
-#include "signals.h"
-#include "process.h"
+#include <kernel.h>
+#include <memory.h>
+#include <basicio.h>
+#include <ELFparse.h>
+#include <signals.h>
+#include <process.h>
 
 processState* processStack = 0;
 

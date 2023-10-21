@@ -5,10 +5,10 @@
 #include <stdint.h>
 #define MMIO_SIZE 1 //In pages
 
-#include "../kernel/memory.h"
-#include "../kernel/basicio.h"
-#include "pci.h"
-#include "xhci.h"
+#include <memory.h>
+#include <basicio.h>
+#include <pci.h>
+#include <xhci.h>
 
 XHCIHostData* firstD;
 XHCIHostData* lastD;

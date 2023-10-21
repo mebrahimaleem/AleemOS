@@ -3,10 +3,10 @@
 //provides implementations for the keyboard driver
 
 #include <stdint.h>
-#include "kbd.h"
-#include "../kernel/portio.h"
-#include "../kernel/memory.h"
-#include "../kernel/basicio.h"
+#include <kbd.h>
+#include <portio.h>
+#include <memory.h>
+#include <basicio.h>
 
 volatile KBDEventQueue* volatile KBDRoot = 0;
 volatile KBDEventQueue* volatile KBDNextEvent = 0;

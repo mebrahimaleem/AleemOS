@@ -2,7 +2,7 @@ ENTRY(_start)
 
 OUTPUT_FORMAT(binary)
 
-STARTUP(build/kentry.elf)
+STARTUP(build/boot2e.elf)
 
 INPUT
 (
@@ -16,7 +16,8 @@ INPUT
 	build/kbd.elf
 	build/ELFparse.elf
 	build/process.elf
-	build/kernel.elf
+	build/processManager.elf
+	build/boot2.elf
 )
 
 OUTPUT(build/kernel.bin)
