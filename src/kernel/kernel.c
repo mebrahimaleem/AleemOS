@@ -241,6 +241,24 @@ void kernel(void){
 	
 	*UTSS = defAppSetup.utss;
 
+#ifdef KERNEL_DEBUG
+	vgaprint((volatile char* volatile)"Press Any Key To Continue...\n", 0x0F);
+
+	setKBDEventTrack(1);
+	while (1){
+		if (KBDNextEvent != 0){
+			uint32_t v = (uint32_t)toAscii(KBDNextEvent->keyCode);
+			KBDNextEvent = KBDNextEvent->next;
+			if (v != 0){
+				setKBDEventTrack(0);
+				break;
+			}
+		}
+	}
+#endif
+	
+	// wait for key press
+
 	//Setup system tables
 	setSysTables();
 
@@ -248,6 +266,7 @@ void kernel(void){
 	defApp->IDN = 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
 	
+
 	clearVGA();
 	createProcess(defApp, 0);
 

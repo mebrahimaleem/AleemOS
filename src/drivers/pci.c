@@ -49,7 +49,25 @@ PCIEntry* getPCIDevices() {
 				last->func = (uint8_t)func; //TODO: Later implement for adding other functions to the PCI device list
 				last->next = 0;
 		
-				switch (_pciReadDWord((uint8_t)bus, dev, (uint8_t)func, 8) >> 8) {
+				uint32_t classCode = _pciReadDWord((uint8_t)bus, dev, (uint8_t)func, 8) >> 8;
+				switch (classCode) {
+					// IDE controllers will be handled in default
+					// TODO: implement better way to handle IDE controller
+					case 0x020000:
+						last->type = ETHN_CTR;
+						break;
+					case 0x030000:
+						last->type = VGA_CTR;
+						break;
+					case 0x060000:
+						last->type = HOST_BRIDGE;
+						break;
+					case 0x068000:
+						last->type = OTHER_BRIDGE;
+						break;
+					case 0x060100:
+						last->type = ISA_BRIDGE;
+						break;
 					case 0x0C0300:
 						last->type = USB_UHCI;
 						break;
@@ -69,17 +87,22 @@ PCIEntry* getPCIDevices() {
 						last->type = USB_NOHC;
 						break;
 					default:
-						last->type = UNKOWN;
+						if ((classCode & 0xFFFF00) == 0x010100) // IDE Controller, unkown interface
+							last->type = IDE_CTR;
+						else
+							last->type = UNKOWN;
 						break;
 				}
 				
-				if (func == 0) {
+				if (func == 0 || last->type != UNKOWN) {
 					vgaprint((volatile char* volatile)"Found PCI Device. Bus: 0x", 0x0A);
 					vgaprintint((uint8_t)bus, 16, 0x0A);
 					vgaprint((volatile char* volatile)" Device: 0x", 0x0A);
 					vgaprintint(dev, 16, 0x0A);
+					vgaprint((volatile char* volatile)" Func: 0x", 0x0A);
+					vgaprintint(func, 16, 0x0A);
 					vgaprint((volatile char* volatile)" Type: ", 0x0A);
-					vgaprintint(last->type, 10, 0x0A);
+					vgaprintint(last->type, 16, 0x0A);
 
 					if (last->irqLine != 0) {
 						vgaprint((volatile char* volatile)" IRQ: 0x", 0x0A);

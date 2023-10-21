@@ -2,6 +2,8 @@
 //
 //provides declarations for shared kernel data structures and functions
 
+//#define KERNEL_DEBUG
+
 /*
 	Function containing kernel setup code
 */
