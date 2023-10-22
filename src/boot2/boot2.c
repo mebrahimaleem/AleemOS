@@ -45,6 +45,7 @@ volatile TSS* volatile kTSS = 0;
 
 uint32_t defAppBP; 
 uint32_t entry;
+processState* defApp;
 
 void boot2(void){
 	initHeap(); //Setup kernel heap
@@ -114,9 +115,6 @@ void boot2(void){
 
 		goto hang;
 	}
-
-	kTSS->ss0 = 2 * 8;
-	kTSS->esp0 = 0xFFFFFFFC;
 	
 	//Install User Data and Code Segments
 	//GDT
@@ -182,17 +180,20 @@ void boot2(void){
 	//Setup system tables
 	setSysTables();
 
-	processState* defApp = &defAppSetup.state;
+	defApp = &defAppSetup.state;
 	defApp->IDN = 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
 
-	clearVGA();
-	createProcess(defApp, 0);
+	transferFromBoot2();
 
 hang:
 	while (1) asm volatile ("hlt" : : : "memory");
 }
 
 void transferFromBoot2() {
- //TODO: implement
+	kTSS->ss0 = 2 * 8;
+	kTSS->esp0 = 0xFFFFFFFC;
+
+	clearVGA();
+	createProcess(defApp, 0);
 }

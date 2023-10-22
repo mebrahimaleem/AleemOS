@@ -32,7 +32,10 @@ void startProcess(processState* state, uint8_t toStart){
 
 //Creates and starts a new process with the processState 'state'
 void createProcess(processState* state, processState* cstate){
-	if (processStack == 0) processStack = state;
+	if (processStack == 0) {
+		processStack = state;
+		processStack->next = 0;
+	}
 	else {
 		state->next = cstate;
 		cstate->next = processStack->next;

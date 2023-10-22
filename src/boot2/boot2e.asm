@@ -214,6 +214,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 0
+xchg bx, bx
 call 0x8:processManager
 add esp, 4
 pop eax
