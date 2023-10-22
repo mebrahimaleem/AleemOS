@@ -1,6 +1,6 @@
-;kentry.asm
+;boot2e.asm
 
-;This is the entry point for the kernel. This file will be linked with the remainaing kernel so that we can switch from assembly to C.
+;This is the entry point for boot2. This file will be linked with the remainaing kernel so that we can switch from assembly to C.
 
 ;NOTE: Since we are linking this file with ld, there is no need for an ORG directive
 
@@ -23,17 +23,14 @@ mov WORD [k_HEADS], cx
 mov WORD [k_KDATA], di
 
 ;Store system tables
-[extern k_gdtd]
-[extern k_ldtd]
 [extern k_idtd]
-[extern k_tssd]
 [extern k_CR3]
-sgdt [k_gdtd]
-sldt [k_ldtd]
-sidt [k_idtd]
-str [k_tssd]
+[extern k_gdtd]
+sidt [IDTR_Buf]
+mov DWORD [k_idtd], IDTR_Buf
 mov eax, cr3
 mov [k_CR3], eax
+mov DWORD [k_gdtd], GDT_ptr
 
 sidt [IDT_ptr]
 
@@ -60,7 +57,7 @@ mov ecx, 2
 rep movsd
 sti
 
-;Pass idt_ptr to kernel
+;Pass idt_ptr to boot2
 [extern k_uidtd]
 mov eax, UIDT_ptr
 mov [k_uidtd], eax
@@ -68,23 +65,22 @@ mov [k_uidtd], eax
 mov eax, UIDT_start
 mov [k_uidts], eax
 
-;Pass end of IDT_ISR size to kernel
+;Pass end of IDT_ISR size to boot2
 [extern k_uisrs]
 mov eax, ISR_END
 sub eax, UIDT_start
 mov [k_uisrs], eax
 
-;Pass GDT to kernel
-[extern k_ugdtd]
-mov eax, UGDT_ptr
-mov [k_ugdtd], eax
-
 [extern boot2]
 jmp boot2
 
-UGDT_ptr:
-dw 55
-dd 0xFFC06000
+GDT_ptr:
+dw 0x30
+dd 0xffc0bfd0
+
+; IDTR Buffer
+IDTR_Buf:
+times 6 db 0
 
 ;IDT pointer
 IDT_ptr:
@@ -579,16 +575,13 @@ iret
 
 [global setSysTables]
 setSysTables:
-push ebp
-mov ebp, esp
 cli
 lgdt [0xFFC06138]
 lidt [0xFFC0613E]
-push eax
+push ax
 mov ax, 40
 ltr ax
-pop eax
-pop ebp
+pop ax
 ret
 
 ;NOTE: We can't pad out this file because this file goes to the begining of the kernel (not the end)

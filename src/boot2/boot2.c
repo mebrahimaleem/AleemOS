@@ -1,4 +1,4 @@
-//kernel.c
+//boot2.c
 //
 //This is the kernel for AleemOS
 
@@ -27,27 +27,21 @@ volatile uint16_t k_HEADS;
 
 volatile uint16_t k_KDATA;
 
-volatile GDT_ptr k_gdtd;
-volatile LDT_ptr k_ldtd;
-volatile IDT_ptr k_idtd;
-volatile TSS_ptr k_tssd;
+volatile GDT_ptr* k_gdtd;
+volatile IDT_ptr* k_idtd;
 volatile uint32_t k_CR3;
 volatile uint32_t k_uidtd;
-volatile uint32_t k_ugdtd;
 volatile uint32_t k_uisrs;
 volatile uint32_t k_uidts;
 
 volatile KernelData* volatile kdata;
 
-extern void setSysTables(void);
-
 PCIEntry* pciEntries;
 
 //Create new system tables	
-TSS* volatile KTSS = (TSS* volatile)0xFFC06068;
-TSS* volatile UTSS = (TSS* volatile)0xFFC060D0;
-DTentry* volatile GDT = (DTentry* volatile)0xFFC06000;
+DTentry* volatile GDT;
 IDTint* volatile IDT = (IDTint* volatile)0xFFC06200;
+volatile TSS* volatile kTSS = 0;
 
 uint32_t defAppBP; 
 uint32_t entry;
@@ -88,6 +82,7 @@ void boot2(void){
 	*(uint32_t*)(0xd000-4) = (0x400000 - 0x2000) | 3; //Last page division
 	*(uint32_t*)(0xd000-8) = (0x400000 - 0x3000) | 3; // Second last Page division
 
+
 	uint16_t nextPT = 0;
 
 	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
@@ -104,8 +99,9 @@ void boot2(void){
 	}
 
 	//Write system table descriptors to system data page
-	*(GDT_ptr*)(0xFFC06138) = *(GDT_ptr*)k_ugdtd;
-	*(IDT_ptr*)(0xFFC0613E) = *(IDT_ptr*)k_uidtd;
+	*(GDT_ptr* volatile)(0xFFC06138) = *k_gdtd;
+	*(IDT_ptr* volatile)(0xFFC0613E) = *(IDT_ptr*)k_uidtd;
+	GDT = (DTentry*)0xBFD0;
 
 	//Setup process sections and paging structures	
 	resetProcessDivs();
@@ -118,48 +114,12 @@ void boot2(void){
 
 		goto hang;
 	}
+
+	kTSS->ss0 = 2 * 8;
+	kTSS->esp0 = 0xFFFFFFFC;
 	
-	//Create new system tables on the system data page
+	//Install User Data and Code Segments
 	//GDT
-	//Null
-	GDT[0].lim0 = 0;
-	GDT[0].bas0 = 0;
-	GDT[0].bas1 = 0;
-	GDT[0].type = 0;
-	GDT[0].DPL = 0;
-	GDT[0].present = 0;
-	GDT[0].lim1 = 0;
-	GDT[0].AVL = 0;
-	GDT[0].flg = 0;
-	GDT[0].granularity = 0;
-	GDT[0].bas2 = 0;
-
-	//Code
-	GDT[1].lim0 = 0xffff;
-	GDT[1].bas0 = 0;
-	GDT[1].bas1 = 0;
-	GDT[1].type = 0x1a;
-	GDT[1].DPL = 0;
-	GDT[1].present = 1;
-	GDT[1].lim1 = 15;
-	GDT[1].AVL = 0;
-	GDT[1].flg = 2;
-	GDT[1].granularity = 1;
-	GDT[1].bas2 = 0;
-
-	//Data
-	GDT[2].lim0 = 0xffff;
-	GDT[2].bas0 = 0;
-	GDT[2].bas1 = 0;
-	GDT[2].type = 0x12;
-	GDT[2].DPL = 0;
-	GDT[2].present = 1;
-	GDT[2].lim1 = 15;
-	GDT[2].AVL = 0;
-	GDT[2].flg = 2;
-	GDT[2].granularity = 1;
-	GDT[2].bas2 = 0;
-
 	//User Code
 	GDT[3].lim0 = 0xffff;
 	GDT[3].bas0 = 0;
@@ -186,10 +146,12 @@ void boot2(void){
 	GDT[4].granularity = 1;
 	GDT[4].bas2 = 0;
 
-	//Kernel TSS
+	kTSS = (TSS*)((uint32_t)kTSS + 0xffc00000); // Move to high kernel
+
+	//TSS
 	GDT[5].lim0 = 0x68;
-	GDT[5].bas0 = 0x6068;
-	GDT[5].bas1 = 0xC0;
+	GDT[5].bas0 = (uint16_t)(uint32_t)kTSS;
+	GDT[5].bas1 = (uint8_t)((uint32_t)kTSS >> 16);
 	GDT[5].type = 0x9;
 	GDT[5].DPL = 0;
 	GDT[5].present = 1;
@@ -197,50 +159,7 @@ void boot2(void){
 	GDT[5].AVL = 0;
 	GDT[5].flg = 2;
 	GDT[5].granularity = 0;
-	GDT[5].bas2 = 0xFF;
-	
-	//User TSS
-	GDT[6].lim0 = 0x68;
-	GDT[6].bas0 = 0x60D0;
-	GDT[6].bas1 = 0xC0;
-	GDT[6].type = 0xB;
-	GDT[6].DPL = 3;
-	GDT[6].present = 1;
-	GDT[6].lim1 = 0;
-	GDT[6].AVL = 0;
-	GDT[6].flg = 2;
-	GDT[6].granularity = 0;
-	GDT[6].bas2 = 0xFF;
-	
-	//Kernel TSS
-	KTSS->link = 48;
-	KTSS->esp0 = 0xFFFFFFFC;
-	KTSS->ss0 = 16;
-	KTSS->esp1 = 0x7c00;
-	KTSS->ss1 = 16;
-	KTSS->esp2 = 0x7c00;
-	KTSS->ss2 = 16;
-	KTSS->cr3 = k_CR3;
-	KTSS->eip = 0;
-	KTSS->eflags = 0;
-	KTSS->eax = 0;
-	KTSS->ecx = 0;
-	KTSS->edx = 0;
-	KTSS->ebx = 0;
-	KTSS->esp = 0xFFFFFFFC;
-	KTSS->ebp = 0xFFFFFFFC;
-	KTSS->esi = 0;
-	KTSS->edi = 0;
-	KTSS->es = 16;
-	KTSS->cs = 8;
-	KTSS->ss = 16;
-	KTSS->ds = 16;
-	KTSS->fs = 16;
-	KTSS->gs = 16;
-	KTSS->ldtd = 0;
-	KTSS->IOPB = 0x68;
-	
-	*UTSS = defAppSetup.utss;
+	GDT[5].bas2 = (uint8_t)((uint32_t)kTSS >> 24);
 
 #ifdef KERNEL_DEBUG
 	vgaprint((volatile char* volatile)"Press Any Key To Continue...\n", 0x0F);
@@ -266,7 +185,6 @@ void boot2(void){
 	processState* defApp = &defAppSetup.state;
 	defApp->IDN = 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
-	
 
 	clearVGA();
 	createProcess(defApp, 0);

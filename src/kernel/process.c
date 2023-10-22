@@ -9,6 +9,7 @@
 #include <ELFparse.h>
 #include <signals.h>
 #include <process.h>
+#include <taskSwitch.h>
 
 processState* processStack = 0;
 
@@ -18,26 +19,13 @@ bool1 pageDivs[1024];
 #pragma GCC optimize("O0")
 //Start a process
 void startProcess(processState* state, uint8_t toStart){
-	GDT[5].type = 0x9;
-	GDT[6].type = 0xB;
-	KTSS->link = 48;
-	UTSS->cr3 = state->cr3;
-	UTSS->eax = (toStart == 1 ? state->argc : state->eax);
-	UTSS->ebx = (toStart == 1 ? state->argv : state->ebx);
-	UTSS->ecx = (toStart == 1 ? state->HS : state->ecx);
-	UTSS->edx = state->edx;
-	UTSS->esi = state->esi;
-	UTSS->edi = state->edi;
-	UTSS->esp = state->esp;
-	UTSS->ebp = state->ebp;
-	UTSS->eip = state->eip;
-	UTSS->eflags = state->eflags;
-
 	addProcess(state->IDN);
-
-	asm volatile ("pushf \n pop ecx \n and ecx, 0xFFC0802A \n or ecx, 0x4200 \n mov %1, ecx \n \
-			mov ax, 0x23 \n mov dx, ax \n mov es, ax \n mov fs, ax \n mov gs, ax \n \
-		 	mov eax, esp \n push 0x23 \n push eax \n push ecx \n push 0x1b \n push %0 \n iret" :  "+b"(state->eip) : "m"(state->eflags): "memory");
+	if (toStart == 1) {
+		state->eax = state->argc;
+		state->ebx = state->argv;
+		state->ecx = state->HS;
+	}
+	taskSwitch((uint32_t)state);
 }
 #pragma GCC pop_options
 

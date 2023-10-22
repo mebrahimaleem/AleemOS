@@ -36,8 +36,9 @@ os: build/os.img Makefile
 	@echo "Done Building OS!"
 
 .PHONY: dbl
-dbl: build/boot2e.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile linkd.ld
+dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile linkd.ld
 	@$(LD) $(LDDFLAGS)
+	@ld -melf_i386 -T userlandl.ld -o build/shd.elf build/sh.o
 
 build/os.img: build/MBR.bin build/FS.img Makefile
 	@cat build/MBR.bin build/FS.img > build/os.img
@@ -63,7 +64,7 @@ build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefil
 $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 	@$(B_NASM) -o $@ $<
 
-build/kernel.bin: build/boot2e.elf build/boot2.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
+build/kernel.bin: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	@$(LD) $(LDFLAGS)
 
 build/boot2e.elf: src/boot2/boot2e.asm Makefile
@@ -72,6 +73,9 @@ build/boot2e.elf: src/boot2/boot2e.asm Makefile
 build/boot2.elf: src/boot2/boot2.c $(INCLUDE) link.ld Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
+build/taskSwitch.elf: src/kernel/taskSwitch.asm $(INCLUDE) link.ld Makefile
+	@$(E_NASM) -o $@ $<
+
 $(KERNEL_OBJ): build/%.elf: src/kernel/%.c src/include/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
@@ -79,8 +83,8 @@ $(DRIVERS_OBJ): build/%.elf: src/drivers/%.c src/include/%.h Makefile
 	@$(CC) $(CFLAGS) $< -o $@
 
 build/sh.elf : src/defapp/* build/stdc.elf userlandl.ld Makefile
-	@$(CC) $(CFLAGS) -I src/include/stdc/ -I src/include/defapp/ src/defapp/sh.c -o build/sh.o
-	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o
+	@$(CC) $(CFLAGS) -I src/include/stdc/ -I src/include/defapp/ src/defapp/sh.c -o build/sh.o -g
+	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o -s
 
 build/stdc.elf : build/stdc/crt0.o $(STDC_OBJ) stdcl.ld Makefile
 	@ld -r -melf_i386 -T stdcl.ld

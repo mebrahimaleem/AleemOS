@@ -11,7 +11,7 @@
 int main(int argc, char** argv){
 	printf("AleemOS 0.0.0 IA-32\nPlease see the licensing for AleemOS at https://github.com/mebrahimaleem/AleemOS/blob/main/LICENSE\n\nWelcome to AleemOS Shell\n");
 
-		printf(">");
+	printf(">");
 	while (1){
 		//Get next command
 	}

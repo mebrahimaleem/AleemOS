@@ -2,7 +2,7 @@
 //
 //provides declarations for shared kernel data structures and functions
 
-#define KERNEL_DEBUG
+//#define KERNEL_DEBUG
 
 extern volatile uint16_t k_KDATA;
 
@@ -64,13 +64,6 @@ typedef struct IDT_ptr {
 	uint16_t size; //Size of IDT
 	uint32_t addr; //Address of IDT
 } IDT_ptr;
-
-/*
-	Structure for holding TSS pointer
-*/
-typedef struct TSS_ptr {
-	uint16_t seg; //Segment index in GDT
-} TSS_ptr;
 
 /*
 	GDT or LDT Entry
@@ -179,18 +172,7 @@ typedef struct TSS {
 	Kernel Data
 */
 extern volatile KernelData* volatile kdata;
-
-//TODO: Get rid of the TSS system
-
-/*
-	Kernel TSS
-*/
-extern TSS* volatile KTSS;
-
-/*
-	Userland TSS
-*/
-extern TSS* volatile UTSS;
+extern volatile TSS* volatile kTSS;
 
 /*
 	GDT

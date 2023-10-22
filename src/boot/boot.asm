@@ -257,19 +257,13 @@ mov dl, BYTE [DRIVE_NO]
 mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
-
-;Make sure we correctly set our TSS
 mov DWORD [KTRCKPS], ebx
 mov DWORD [KHEADS], ecx
 mov DWORD [KBOOTNO], edx
 mov DWORD [KPARTI], esi
 
-;Set the LDT
-mov ax, R0LD_SEG
-lldt ax
-
 ;Set segments
-mov ax, L0DT_SEG
+mov ax, DATA_SEG
 mov ds, ax
 mov ss, ax
 mov es, ax
@@ -336,10 +330,18 @@ out 0x40, al ;Set the reload value
 mov al, ah
 out 0x40, al
 
-sti ;Renable interupts
+; Jump to boot2e
 
-;go to kernel (via task gate)
-int 0x30
+mov eax, 0x0
+mov ecx, [KHEADS]
+mov edx, [KBOOTNO]
+mov ebx, [KTRCKPS]
+mov esi, [KPARTI]
+mov edi, KERNEL_DATA
+mov ebp, 0x9fa00
+mov esp, ebp
+
+jmp 0xe000
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -485,9 +487,6 @@ ISR_TRAP ISR_2C ;IRQ 0x0C - Slave PC2 mouse
 ISR_TRAP ISR_2D ;IRQ 0x0D - Slave FPU OR Co/Inter-processor
 ISR_TRAP ISR_2E ;IRQ 0x0E - Slave primary ATA
 ISR_TRAP ISR_2F ;IRQ 0x0F - Slave secondary ATA
-
-;Kernel defined interupts
-ISR_TASK KTSS_SEG, 0 ;int 0x30 Kernel entry task gate
 
 times 8 dq 0
 IDT_end:
@@ -903,6 +902,28 @@ iret
 
 ;GDT
 align 4
+
+KHEADS	dd 0x0	;ECX
+KBOOTNO	dd 0x0	;EDX
+KTRCKPS	dd 0x0	;EBX
+KPARTI	dd 0x0	;ESI
+
+align 4
+IDT_ptr: ;This is the descriptor for the IDT
+	dw IDT_end - IDT_start -1 ;Size - 1
+	dd IDT_start ;Starting address
+
+align 4
+GDT_ptr: ;This is the descriptor for the GDT
+	dw GDT_end - GDT_start - 1 ;Size - 1
+	dd GDT_start ;Starting address
+
+;Some useful constants
+CODE_SEG equ GDT_code - GDT_start
+DATA_SEG equ GDT_data - GDT_start
+
+times 0x1400-($-$$) - 8 * 6 db 0;We need to be 4KiB aligned
+
 GDT_start:
 	GDT_null: ;NULL descriptor
 		dq 0
@@ -920,111 +941,12 @@ GDT_start:
 		db 10010010b
 		db 11001111b
 		db 0x00
-	GDT_KTSS: ;Kernel task descriptor
-		dw KTSS_end - KTSS_start - 1
-		dw KTSS_start ;NOTE: The TSS is located within the first 0xFFFF bytes, hence all base bits above 15 should be 0
-		db 0x00
-		db 0b10001001
-		db 0b01000000
-		db 0x00
-	GDT_r0LD: ;Ring 0 LDT descriptor
-		dw R0LDT_end - R0LDT_start - 1
-		dw R0LDT_start
-		db 0x00
-		db 0b10000010
-		db 0b00000000
-		db 0x00		
-	GDT_UTSS: ;Current user process TSS
-		dq 0
+	dq 0 ; User code (set by boot2)
+	dq 0 ; User data (set by boot2)
+	dq 0 ; TSS
 	GDT_end:
 
-align 4
-R0LDT_start: ;Our kernels LDT, has 3 entries
-	R0LDT_null: ;Ring 0 LDT Null descriptor
-		dq 0
-	R0LDT_code: ;Ring 0 LDT code descriptor
-		dw 0xFFFF			;Limit 0-16
-		dw 0x0000			;Base 0-16
-		db 0x00				;Base 16-24
-		db 10011010b	;Flags + Type
-		db 11001111b	;Flags + Limit 16-20
-		db 0x00				;Base 24-32
-	R0LDT_data: ;Ring 0 LDT data descriptor
-		dw 0xFFFF
-		dw 0x0000
-		db 0x00
-		db 10010010b
-		db 11001111b
-		db 0x00
-R0LDT_end:
-
-
-align 4
-KTSS_start: ;Kernel Task Segment State
-	dw KTSS_SEG 	;Link
-	dw 0x0000			;Reserved
-	dd 0x9fa00		;ESP 0
-	dw R0LDT_data	;SS 0
-	dw 0x0000			;Reserved
-	dd 0x7c00			;ESP 1
-	dw DATA_SEG		;SS 1
-	dw 0x0000			;Reserved
-	dd 0x7c00			;ESP 2
-	dw DATA_SEG		;SS 2
-	dw 0x0000			;Reserved
-dd PAGE_DIRECTORY ;CR3
-	dd 0xE000			;EIP
-	dd 0x200			;EFLAGS 
-	dd 0x0000			;EAX
-KHEADS	dd 0x0	;ECX NOTE:Must be set at runtime
-KBOOTNO	dd 0x0	;EDX NOTE:Must be set at runtine
-KTRCKPS	dd 0x0	;EBX NOTE:Must be set at runtime
-	dd 0x9fa00		;ESP
-	dd 0x9fa00		;EBP
-KPARTI	dd 0x0	;ESI NOTE:Must be set at runtime
-	dd KERNEL_DATA;EDI NOTE:Must be set at runtime
-	dw L0DT_SEG		;ES
-	dw 0x0				;Reserved
-	dw L0CD_SEG		;CS
-	dw 0x0				;Reserved
-	dw L0DT_SEG		;SS
-	dw 0x0				;Reserved
-	dw L0DT_SEG		;DS
-	dw 0x0				;Reserved
-	dw L0DT_SEG		;FS
-	dw 0x0				;Reserved
-	dw L0DT_SEG		;GS
-	dw 0x0				;Reserved
-	dw (R0LD_SEG/8)<<3;LDT Segment Descriptor
-	dw 0x0				;Reserved
-	dw 0x0				;Reserved + T
-	dw IDT_end - IDT_start
-KTSS_end:
-
-align 4
-IDT_ptr: ;This is the descriptor for the IDT
-	dw IDT_end - IDT_start -1 ;Size - 1
-	dd IDT_start ;Starting address
-
-align 4
-GDT_ptr: ;This is the descriptor for the GDT
-	dw GDT_end - GDT_start - 1 ;Size - 1
-	dd GDT_start ;Starting address
-
-;Some useful constants
-CODE_SEG equ GDT_code - GDT_start
-DATA_SEG equ GDT_data - GDT_start
-KTSS_SEG equ GDT_KTSS - GDT_start
-R0LD_SEG equ GDT_r0LD - GDT_start
-
-L0CD_SEG equ R0LDT_code - R0LDT_start
-L0DT_SEG equ R0LDT_data - R0LDT_start
-
-;Paging tables
-
 ;Page directory
-times 0x1400-($-$$) db 0;We need to be 4KiB aligned
-
 PAGE_DIRECTORY:
 times 1024 dd 2 ;Create non present pages
 

@@ -16,6 +16,7 @@ INPUT
 	build/kbd.elf
 	build/ELFparse.elf
 	build/process.elf
+	build/taskSwitch.elf
 	build/processManager.elf
 	build/boot2.elf
 )
