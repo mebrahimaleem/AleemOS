@@ -34,8 +34,15 @@ mov DWORD [k_gdtd], GDT_ptr
 
 sidt [IDT_ptr]
 
-;Install ISR 0x21
+;Install ISR 0x20
 cli
+mov esi, ISR20
+mov edi, [IDT_st]
+add edi, (0x20 * 8)
+mov ecx, 2
+rep movsd
+
+;Install ISR 0x21
 mov esi, ISR21
 mov edi, [IDT_st]
 add edi, (0x21 * 8)
@@ -55,6 +62,10 @@ mov edi, [IDT_st]
 add edi, (0x2b * 8)
 mov ecx, 2
 rep movsd
+
+; Set scheduler status to disabled
+[extern schedulerStatus]
+mov BYTE [schedulerStatus], 0xff
 sti
 
 ;Pass idt_ptr to boot2
@@ -122,32 +133,32 @@ dw 0
 
 ;User IDT
 UIDT_start:
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
+	ISR_INT ISR_00	 ;#DE Division by zero
+	ISR_INT ISR_01	 ;#DB Debug
+	ISR_INT ISR_02	 ;NMI Non-maskable interrupt
+	ISR_INT ISR_03	 ;#BP Breakpoint
+	ISR_INT ISR_04	 ;#OF Overflow
+	ISR_INT ISR_05	 ;#BR Bound range exceeded
+	ISR_INT ISR_06	 ;#UD Invalid opcode
+	ISR_INT ISR_07	 ;#NM Device not available
+	ISR_INT ISR_08	 ;#DF Double fault
+	ISR_INT ISR_09	 ;#CO Coprocessor segment overrun
+	ISR_INT ISR_0A	 ;#TS Invalid TSS
+	ISR_INT ISR_0B	 ;#NP Segment not present
+	ISR_INT ISR_0C	 ;#SS Stack segment fault
+	ISR_INT ISR_0D	 ;#GP General protection fault
+	ISR_INT ISR_0E	 ;#PF Page fault
 	dq 0 ;Reserved
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
+	ISR_INT ISR_10	 ;#MF x87 floating-point exception
+	ISR_INT ISR_11	 ;#AC Alignment check
+	ISR_INT ISR_12	 ;#MC Machine check
+	ISR_INT ISR_13	 ;#XM SIMD floating-point exception
+	ISR_INT ISR_14	 ;#VE Virtualization exception
+	ISR_INT ISR_15	 ;#CP Control protection exception
 	times 6 dq 0 ;Reserved
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
-	ISR_INT ISR_KILL ;Kill process
+	ISR_INT ISR_1C	 ;#HV Hypervisor injection exception
+	ISR_INT ISR_1D	 ;#VC VMM communication exception
+	ISR_INT ISR_1E	 ;#SX Security exception
 	dq 0 ;Reserved
 
 ;IRQs starting at int 0x20
@@ -204,17 +215,159 @@ mov esp, 0xFFFFFFE8
 sti
 iret
 
-[extern processManager]
-ISR_KILL:
+ISR_00:
 cli
 pushad
+mov edx, 0x20
+jmp ISR_G
+
+ISR_01:
+cli
+pushad
+mov edx, 0x21
+jmp ISR_G
+
+ISR_02:
+cli
+pushad
+mov edx, 0x22
+jmp ISR_G
+
+ISR_03:
+cli
+pushad
+mov edx, 0x23
+jmp ISR_G
+
+ISR_04:
+cli
+pushad
+mov edx, 0x24
+jmp ISR_G
+
+ISR_05:
+cli
+pushad
+mov edx, 0x25
+jmp ISR_G
+
+ISR_06:
+cli
+pushad
+mov edx, 0x26
+jmp ISR_G
+
+ISR_07:
+cli
+pushad
+mov edx, 0x27
+jmp ISR_G
+
+ISR_08:
+cli
+pushad
+mov edx, 0x28
+jmp ISR_G
+
+ISR_09:
+cli
+pushad
+mov edx, 0x29
+jmp ISR_G
+
+ISR_0A:
+cli
+pushad
+mov edx, 0x2A
+jmp ISR_G
+
+ISR_0B:
+cli
+pushad
+mov edx, 0x2B
+jmp ISR_G
+
+ISR_0C:
+cli
+pushad
+mov edx, 0x2C
+jmp ISR_G
+
+ISR_0D:
+cli
+pushad
+mov edx, 0x2D
+jmp ISR_G
+
+ISR_0E:
+cli
+pushad
+mov edx, 0x2E
+jmp ISR_G
+
+ISR_10:
+cli
+pushad
+mov edx, 0x30
+jmp ISR_G
+
+ISR_11:
+cli
+pushad
+mov edx, 0x31
+jmp ISR_G
+
+ISR_12:
+cli
+pushad
+mov edx, 0x32
+jmp ISR_G
+
+ISR_13:
+cli
+pushad
+mov edx, 0x33
+jmp ISR_G
+
+ISR_14:
+cli
+pushad
+mov edx, 0x34
+jmp ISR_G
+
+ISR_15:
+cli
+pushad
+mov edx, 0x35
+jmp ISR_G
+
+ISR_1C:
+cli
+pushad
+mov edx, 0x3C
+jmp ISR_G
+
+ISR_1D:
+cli
+pushad
+mov edx, 0x3D
+jmp ISR_G
+
+ISR_1E:
+cli
+pushad
+mov edx, 0x3E
+jmp ISR_G
+
+[extern farSchedulerEntry]
+[extern processManager]
+ISR_G:
 mov ebp, esp
 mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 0
-xchg bx, bx
+push edx
 call 0x8:processManager
 add esp, 4
 pop eax
@@ -229,10 +382,11 @@ pushad
 mov ebp, esp
 mov eax, cr3
 push eax
+mov ebx, esp
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 1
-call 0x8:processManager
+push ebx
+call 0x8:farSchedulerEntry
 add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
@@ -499,6 +653,13 @@ ISR_END:
 
 ;ISRs to install
 
+ISR20:
+dw ISR20_asm
+dw (8/8)<<3
+db 0
+db 0b10001111
+dw 0
+
 ISR21:
 dw ISR21_asm
 dw (8/8)<<3
@@ -520,6 +681,26 @@ db 0
 db 0b10001111
 dw 0
 
+[extern ISR20_handler]
+ISR20_asm:
+cli
+pushad
+
+mov al, 0x20 ;Tell PIC we handled the interupt
+out 0x20, al
+
+push 0xc000
+mov eax, esp
+push eax
+call ISR20_handler
+add esp, 0x4
+pop eax
+
+
+popad
+sti
+iret
+
 [extern ISR21_handler]
 
 ISR21_asm:
@@ -534,7 +715,6 @@ call ISR21_handler
 add esp, 0x4
 
 mov al, 0x20 ;Tell PIC we handled the interupt
-out 0xa0, al
 out 0x20, al
 
 popad
@@ -578,7 +758,6 @@ iret
 setSysTables:
 cli
 lgdt [0xFFC06138]
-lidt [0xFFC0613E]
 push ax
 mov ax, 40
 ltr ax

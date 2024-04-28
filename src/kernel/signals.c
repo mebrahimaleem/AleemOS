@@ -15,30 +15,30 @@ void initSignals() {
 	pSigs = 0;
 }
 
-void addProcess(uint32_t IDN) {
+void addProcess(uint32_t PID) {
 	if (pSigs == 0) {
 		pSigs = (SignalQueue*)malloc(sizeof(SignalQueue));
-		pSigs->IDN = IDN;
+		pSigs->PID= PID;
 		pSigs->first = pSigs->last = 0;
 		pSigs->next = 0;
 	}
 	else {
 		SignalQueue* old = pSigs;
 		pSigs = (SignalQueue*)malloc(sizeof(SignalQueue));
-		pSigs->IDN = IDN;
+		pSigs->PID= PID;
 		pSigs->first = pSigs->last = 0;
 		pSigs->next = old;
 	}
 	return;
 }
 
-void removeProcess(uint32_t IDN) {
+void removeProcess(uint32_t PID) {
 	SignalQueue* j = 0;
 	for (SignalQueue* i = pSigs; i != 0; i = i->next) {
-		if (i->IDN == IDN) {
+		if (i->PID== PID) {
 			if (j == 0) pSigs = i->next;
 			else j->next = i->next;
-			while (getSignal(IDN).type != NONE_SIGNAL);
+			while (getSignal(PID).type != NONE_SIGNAL);
 			free(i);
 			return;
 		}
@@ -87,17 +87,17 @@ Signal getkSignal() {
 	return _getSignal(&kSigs);
 }
 
-void sendSignal(uint32_t IDN, Signal sig) {
+void sendSignal(uint32_t PID, Signal sig) {
 	for (SignalQueue* i = pSigs; i != 0; i = i->next)
-		if (i->IDN == IDN) {
+		if (i->PID== PID) {
 			_sendSignal(i, sig);
 			return;
 		}
 }
 
-Signal getSignal(uint32_t IDN) {
+Signal getSignal(uint32_t PID) {
 	for (SignalQueue* i = pSigs; i != 0; i = i->next)
-		if (i->IDN == IDN) return _getSignal(i);
+		if (i->PID== PID) return _getSignal(i);
 	Signal sig;
 	sig.type = NONE_SIGNAL;
 	return sig;

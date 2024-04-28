@@ -7,13 +7,6 @@
 extern volatile uint16_t k_KDATA;
 
 /*
-	Structure to save memory on single bit booleans
-*/
-typedef struct bool1 {
-	uint8_t b : 1; //Boolean value
-} bool1;
-
-/*
 	Strucutre to store information on used memory (from the BIOS)
 */
 typedef struct MemoryMapEntry {

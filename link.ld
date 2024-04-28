@@ -17,6 +17,7 @@ INPUT
 	build/ELFparse.elf
 	build/process.elf
 	build/taskSwitch.elf
+	build/processScheduler.elf
 	build/processManager.elf
 	build/boot2.elf
 )

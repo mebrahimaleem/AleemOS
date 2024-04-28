@@ -26,7 +26,7 @@ typedef struct SignalQueue{
 	Signal* first; // First (oldest) signal
 	Signal* last; // Last (newest) signal
 	struct SignalQueue* next; // Pointer for signalQueue for the next process
-	uint32_t IDN; // Process Identification Number
+	uint32_t PID;
 } SignalQueue;
 
 /*
@@ -36,30 +36,26 @@ extern void initSignals(void);
 
 /*
 	Registers a process for receiving signals
-	IDN: IDN for the process
 */
-extern void addProcess(uint32_t IDN);
+extern void addProcess(uint32_t PID);
 
 /* 
 	Unregisters a process from receiving signals
-	IDN: IDN for the process
 */
-extern void removeProcess(uint32_t IDN);
+extern void removeProcess(uint32_t PID);
 
 /*
 	Send a signal to a process
-	IDN: IDN of the process
 	sig: Signal to send
 */
-extern void sendSignal(uint32_t IDN, Signal sig);
+extern void sendSignal(uint32_t PID, Signal sig);
 
 /*
 	Get a processes oldest signal
-	IDN: IDN of the process
 
 	Returns the signal
 */
-extern Signal getSignal(uint32_t IDN);
+extern Signal getSignal(uint32_t PID);
 
 /*
 	Send a signal to the kernel/drivers

@@ -6,7 +6,37 @@ mov esi, [esp + 4] ; State pointer
 
 jmp trampolineEntry + 0xffc00000
 
+[global kernelReentry]
+kernelReentry:
+cli
+
+[extern k_idtd]
+mov eax, [k_idtd]
+lidt [eax]; 
+
+mov esi, [esp + 4] ; State pointer
+
+mov esp, [esi + 24]
+add esp, 12 ; Adjust esp to create iret framae
+
+mov eax, [esi + 36]
+push eax ; eflags
+push 0x8 ; cs
+mov eax, [esi + 32]
+push eax ; eip
+
+mov eax, [esi + 0]
+mov ebx, [esi + 4]
+mov ecx, [esi + 8]
+mov edx, [esi + 12]
+mov edi, [esi + 20]
+mov ebp, [esi + 28]
+mov esi, [esi + 16]
+
+iret
+
 trampolineEntry:
+lidt [0xFFC0613E]
 
 ; Prepare registers
 mov eax, [esi + 16]
@@ -36,6 +66,7 @@ mov cr3, eax
 
 ; Move stack frame to userland
 mov esp, ebx
+add esp, 20
 
 mov eax, esp ; Prepare stack frame
 push 0x23
