@@ -569,7 +569,7 @@ dw 0
 ISR20_asm:
 mov DWORD [tebp], ebp ; store ebp for saving state
 mov ebp, esp ; get kernel esp
-add ebp, 16
+add ebp, 12
 
 push eax
 push ecx

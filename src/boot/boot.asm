@@ -520,6 +520,7 @@ ISR1D_S db "#VC", 0
 ISR1E_S db "#SX", 0
 
 ISR_00:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR00_S
@@ -534,6 +535,7 @@ call pm_print
 iret
 
 ISR_02:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR02_S
@@ -548,6 +550,7 @@ call pm_print
 iret
 
 ISR_04:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR04_S
@@ -555,6 +558,7 @@ call pm_print
 jmp $
 
 ISR_05:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR05_S
@@ -562,6 +566,7 @@ call pm_print
 jmp $
 
 ISR_06:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR06_S
@@ -569,6 +574,7 @@ call pm_print
 jmp $
 
 ISR_07:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR07_S
@@ -576,6 +582,7 @@ call pm_print
 jmp $
 
 ISR_08:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR08_S
@@ -586,6 +593,7 @@ ISR_09:
 iret
 
 ISR_0A:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0A_S
@@ -593,6 +601,7 @@ call pm_print
 jmp $
 
 ISR_0B:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0B_S
@@ -600,6 +609,7 @@ call pm_print
 jmp $
 
 ISR_0C:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0C_S
@@ -607,6 +617,7 @@ call pm_print
 jmp $
 
 ISR_0D:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0D_S
@@ -614,6 +625,7 @@ call pm_print
 jmp $
 
 ISR_0E:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0E_S
@@ -621,6 +633,7 @@ call pm_print
 jmp $
 
 ISR_10:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR10_S
@@ -628,6 +641,7 @@ call pm_print
 jmp $
 
 ISR_11:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR11_S
@@ -635,6 +649,7 @@ call pm_print
 jmp $
 
 ISR_12:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR12_S
@@ -642,6 +657,7 @@ call pm_print
 jmp $
 
 ISR_13:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR13_S
@@ -649,6 +665,7 @@ call pm_print
 jmp $
 
 ISR_14:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR14_S
@@ -656,6 +673,7 @@ call pm_print
 jmp $
 
 ISR_15:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR15_S
@@ -663,6 +681,7 @@ call pm_print
 jmp $
 
 ISR_1C:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1C_S
@@ -670,6 +689,7 @@ call pm_print
 jmp $
 
 ISR_1D:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1D_S
@@ -677,6 +697,7 @@ call pm_print
 jmp $
 
 ISR_1E:
+cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1E_S
