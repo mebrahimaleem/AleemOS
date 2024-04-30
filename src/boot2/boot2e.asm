@@ -340,7 +340,6 @@ popad
 iret
 
 IRQ0:
-cli
 mov DWORD [tebp + 0xffc00000], ebp ; for restoring state
 mov ebp, [esp+12] ; get userland esp
 
@@ -373,10 +372,17 @@ pop eax ; restore userland PD
 mov cr3, eax
 
 popad ; will skip esp
-sti
 iret
 
 [extern processManager]
+IRQG:
+call 0x8:processManager
+add esp, 4
+pop eax
+mov cr3, eax ;Restore PD
+popad
+iret
+
 IRQ1:
 pushad
 mov ebp, esp
@@ -385,12 +391,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 2
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ2:
 pushad
@@ -400,12 +401,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 3
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ3:
 pushad
@@ -415,12 +411,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 4
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ4:
 pushad
@@ -430,12 +421,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 5
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ5:
 pushad
@@ -445,12 +431,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 6
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ6:
 pushad
@@ -460,12 +441,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 7
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ7:
 pushad
@@ -475,12 +451,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 8
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ8:
 pushad
@@ -490,12 +461,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 9
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQ9:
 pushad
@@ -505,12 +471,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 10
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQA:
 pushad
@@ -520,12 +481,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 11
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQB:
 pushad
@@ -535,12 +491,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 12
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQC:
 pushad
@@ -550,12 +501,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 13
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQD:
 pushad
@@ -565,12 +511,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 14
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQE:
 pushad
@@ -580,12 +521,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 15
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 IRQF:
 pushad
@@ -595,12 +531,7 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push 16
-call 0x8:processManager
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
-iret
+jmp IRQG
 
 ISR_END:
 
