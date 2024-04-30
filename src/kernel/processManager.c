@@ -69,7 +69,7 @@ void processManager(uint32_t cs, uint32_t check){
 	if ((check & 0x20) == 0x20){
 		last_exitcode = check;
 		vgaprint((volatile char* volatile)"An exception has occured! Error code: ", 0x40);
-		vgaprintint(check, 16, 0x40);
+		vgaprintint(check - 0x20, 16, 0x40);
 		vgaprint((volatile char* volatile)"\n", 0x40);
 		killProcess();
 	}

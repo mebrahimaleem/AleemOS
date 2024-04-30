@@ -17,7 +17,6 @@ lidt [eax];
 mov esi, [esp + 4] ; State pointer
 
 mov esp, [esi + 24]
-add esp, 12 ; Adjust esp to create iret framae
 
 mov eax, [esi + 36]
 push eax ; eflags
@@ -66,11 +65,9 @@ mov cr3, eax
 
 ; Move stack frame to userland
 mov esp, ebx
-add esp, 20
 
-mov eax, esp ; Prepare stack frame
 push 0x23
-push eax
+push ebx
 push DWORD [r_efl + 0xffc00000]
 push 0x1b
 push DWORD [r_eip + 0xffc00000]
@@ -90,8 +87,6 @@ mov ebp, [r_ebp + 0xffc00000]
 mov esi, [r_esi + 0xffc00000]
 
 iret
-
-jmp $
 
 r_eax dd 0
 r_ebx dd 0

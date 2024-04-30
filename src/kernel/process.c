@@ -142,7 +142,7 @@ processSetup setupProcess(uint8_t* volatile src){
 		ret.state.edi = 0;
 
 	ret.state.esp = 
-		ret.state.ebp = 0xFFC00000 - 4 - 0x14; //subtract 0x14 to make room for the iret frame
+		ret.state.ebp = 0xFFC00000 - 4; //subtract 0x14 to make room for the iret frame
 
 	ret.state.eip = entry;
 	ret.state.cr3 = pagingB;
@@ -151,33 +151,6 @@ processSetup setupProcess(uint8_t* volatile src){
 
 	ret.state.PID = nextPID;
 	nextPID++;
-
-	ret.utss.link = 48;
-	ret.utss.esp0 = 0xFFFFFFFc;
-	ret.utss.esp1 =
-		ret.utss.esp2 = 0x7c00;
-	ret.utss.ss0 =
-		ret.utss.ss1 =
-		ret.utss.ss2 = 16;
-	ret.utss.cr3 = pagingB;
-	ret.utss.eip = entry;
-	ret.utss.eflags = 0x200;
-	ret.utss.eax =
-		ret.utss.ecx =
-		ret.utss.edx =
-		ret.utss.ebx =
-		ret.utss.esi =
-		ret.utss.edi =
-		ret.utss.ldtd = 0;
-	ret.utss.esp =
-		ret.utss.ebp = 0xFFC00000 - 4;
-	ret.utss.es =
-		ret.utss.ss =
-		ret.utss.ds =
-		ret.utss.fs =
-		ret.utss.gs = 32 | 3;
-	ret.utss.cs = 24 | 3;
-	ret.utss.IOPB = 0x68;
 
 	addProcess(ret.state.PID);
 	ret.res = 0;

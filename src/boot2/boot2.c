@@ -165,6 +165,7 @@ void boot2(void){
 	GDT[5].bas2 = (uint8_t)((uint32_t)kTSS >> 24);
 
 #ifdef KERNEL_DEBUG
+	// wait for key press
 	vgaprint((volatile char* volatile)"Press Any Key To Continue...\n", 0x0F);
 
 	setKBDEventTrack(1);
@@ -180,8 +181,6 @@ void boot2(void){
 	}
 #endif
 	
-	// wait for key press
-
 	defApp = &defAppSetup.state;
 	defApp->PID= 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything

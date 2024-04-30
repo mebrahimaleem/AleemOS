@@ -39,15 +39,14 @@ void ISR20_handler(uint32_t opt0) { //from kernel space
 	return;
 }
 
-void farSchedulerEntry(uint32_t cs, uint32_t frame) { //ISR20 from userland (far call)
+void farSchedulerEntry(uint32_t frame) { //ISR20 from userland (far call)
 	kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
 	kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
 	kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
-	asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory"); //Tell PIC we are done
 
 	_schedulerSchedule(frame);
 
-	asm volatile ("leave \n retf" : : "m"(cs) : "memory"); //Far return
+	return;
 }
 #pragma GCC pop_options
 
@@ -55,7 +54,7 @@ void _schedulerSchedule(uint32_t frame) {
 	if (schedulerStatus == 0xff) return;
 	
 	uint32_t curTime = ((volatile KernelData* volatile)(volatile uint32_t)k_KDATA)->systemTime.whole_ms;
-	if (curTime >= schedulerTimestamp) {
+	if ((curTime >= schedulerTimestamp) || (processCF & 1) == 1) {
 		if ((processCF & 1) == 0){
 			_schedulerCurrentProcess->cr3 = *(uint32_t* volatile)(frame);
 			_schedulerCurrentProcess->edi = *(uint32_t* volatile)(frame+4);
@@ -75,7 +74,7 @@ void _schedulerSchedule(uint32_t frame) {
 		else if (blockingDequeue == 0 && lowDequeue == 0 && normalDequeue == 0 && highDequeue == 0) { //No processess remain scheduled
 			// Halt operating system
 			vgaprint((volatile char* volatile)"All processess have exited! System halt.", 0x04);
-			while(1) asm volatile ("cli ; hlt" : : : "memory");
+			while(1) asm volatile ("cli \n hlt" : : : "memory");
 		}
 
 		if (blockingDequeue != 0) { //Check if blocking priority process is waiting
@@ -158,8 +157,7 @@ void scheduleProcess(processState* state) {
 void unscheduleCurrentProcess() {
 	processCF |= 1;
 
-	// suspend current process until next switch
-	while(1) asm volatile ("sti ; hlt" : : : "memory");
+	_schedulerSchedule(0);
 }
 
 void initScheduler(void) {

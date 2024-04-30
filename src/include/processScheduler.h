@@ -6,7 +6,7 @@ extern void unscheduleCurrentProcess(void);
 
 extern void initScheduler(void);
 
-extern void farSchedulerEntry(uint32_t cs, uint32_t frame);
+extern void farSchedulerEntry(uint32_t frame);
 
 extern void _schedulerSchedule(uint32_t frame);
 

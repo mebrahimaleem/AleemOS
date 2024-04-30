@@ -31,7 +31,6 @@ typedef struct processState {
 typedef struct processSetup {
 	uint8_t res; //0 if process is ok, otherwise data is invalid
 	processState state; //processState for the new process
-	TSS utss; //TSS for the new process
 	uint32_t codeB; //Base address for the start of the code
 
 } processSetup;

@@ -133,51 +133,51 @@ dw 0
 
 ;User IDT
 UIDT_start:
-	ISR_INT ISR_00	 ;#DE Division by zero
-	ISR_INT ISR_01	 ;#DB Debug
-	ISR_INT ISR_02	 ;NMI Non-maskable interrupt
-	ISR_INT ISR_03	 ;#BP Breakpoint
-	ISR_INT ISR_04	 ;#OF Overflow
-	ISR_INT ISR_05	 ;#BR Bound range exceeded
-	ISR_INT ISR_06	 ;#UD Invalid opcode
-	ISR_INT ISR_07	 ;#NM Device not available
-	ISR_INT ISR_08	 ;#DF Double fault
-	ISR_INT ISR_09	 ;#CO Coprocessor segment overrun
-	ISR_INT ISR_0A	 ;#TS Invalid TSS
-	ISR_INT ISR_0B	 ;#NP Segment not present
-	ISR_INT ISR_0C	 ;#SS Stack segment fault
-	ISR_INT ISR_0D	 ;#GP General protection fault
-	ISR_INT ISR_0E	 ;#PF Page fault
+	ISR_TRAP ISR_00	 ;#DE Division by zero
+	ISR_TRAP ISR_01	 ;#DB Debug
+	ISR_TRAP ISR_02	 ;NMI Non-maskable interrupt
+	ISR_TRAP ISR_03	 ;#BP Breakpoint
+	ISR_TRAP ISR_04	 ;#OF Overflow
+	ISR_TRAP ISR_05	 ;#BR Bound range exceeded
+	ISR_TRAP ISR_06	 ;#UD Invalid opcode
+	ISR_TRAP ISR_07	 ;#NM Device not available
+	ISR_TRAP ISR_08	 ;#DF Double fault
+	ISR_TRAP ISR_09	 ;#CO Coprocessor segment overrun
+	ISR_TRAP ISR_0A	 ;#TS Invalid TSS
+	ISR_TRAP ISR_0B	 ;#NP Segment not present
+	ISR_TRAP ISR_0C	 ;#SS Stack segment fault
+	ISR_TRAP ISR_0D	 ;#GP General protection fault
+	ISR_TRAP ISR_0E	 ;#PF Page fault
 	dq 0 ;Reserved
-	ISR_INT ISR_10	 ;#MF x87 floating-point exception
-	ISR_INT ISR_11	 ;#AC Alignment check
-	ISR_INT ISR_12	 ;#MC Machine check
-	ISR_INT ISR_13	 ;#XM SIMD floating-point exception
-	ISR_INT ISR_14	 ;#VE Virtualization exception
-	ISR_INT ISR_15	 ;#CP Control protection exception
+	ISR_TRAP ISR_10	 ;#MF x87 floating-point exception
+	ISR_TRAP ISR_11	 ;#AC Alignment check
+	ISR_TRAP ISR_12	 ;#MC Machine check
+	ISR_TRAP ISR_13	 ;#XM SIMD floating-point exception
+	ISR_TRAP ISR_14	 ;#VE Virtualization exception
+	ISR_TRAP ISR_15	 ;#CP Control protection exception
 	times 6 dq 0 ;Reserved
-	ISR_INT ISR_1C	 ;#HV Hypervisor injection exception
-	ISR_INT ISR_1D	 ;#VC VMM communication exception
-	ISR_INT ISR_1E	 ;#SX Security exception
+	ISR_TRAP ISR_1C	 ;#HV Hypervisor injection exception
+	ISR_TRAP ISR_1D	 ;#VC VMM communication exception
+	ISR_TRAP ISR_1E	 ;#SX Security exception
 	dq 0 ;Reserved
 
 ;IRQs starting at int 0x20
-	ISR_TRAP IRQ0
-	ISR_TRAP IRQ1
-	ISR_TRAP IRQ2
-	ISR_TRAP IRQ3
-	ISR_TRAP IRQ4
-	ISR_TRAP IRQ5
-	ISR_TRAP IRQ6
-	ISR_TRAP IRQ7
-	ISR_TRAP IRQ8
-	ISR_TRAP IRQ9
-	ISR_TRAP IRQA
-	ISR_TRAP IRQB
-	ISR_TRAP IRQC
-	ISR_TRAP IRQD
-	ISR_TRAP IRQE
-	ISR_TRAP IRQF
+	ISR_INT IRQ0
+	ISR_INT IRQ1
+	ISR_INT IRQ2
+	ISR_INT IRQ3
+	ISR_INT IRQ4
+	ISR_INT IRQ5
+	ISR_INT IRQ6
+	ISR_INT IRQ7
+	ISR_INT IRQ8
+	ISR_INT IRQ9
+	ISR_INT IRQA
+	ISR_INT IRQB
+	ISR_INT IRQC
+	ISR_INT IRQD
+	ISR_INT IRQE
+	ISR_INT IRQF
 
 ;System ISRs
 	ISR_INT ISR_SYSCALL ;System call (int 0x30)
@@ -185,182 +185,146 @@ UIDT_end:
 
 [extern sysCall]
 ISR_SYSCALL:
-cli
-mov esp, eax
-pop ebx
-pop ecx
-pushad
 mov ebp, esp
-mov esp, 0xFFFFFFE4
-mov eax, cr3
-push eax
+mov esp, eax
+mov ebx, [esp]
+mov ecx, [esp+4]
+mov esp, ebp
+mov edx, cr3
 mov eax, 0xc000
 mov cr3, eax
+push ebp
+push edx
 push ebx
 push ecx
 call 0x8:sysCall
 add esp, 8
-pop ebx
-mov cr3, ebx
-mov esp, ebp
-pop edi
-pop esi
-pop ebp
-add esp, 4
-pop ebx
 pop edx
-pop ecx
-add esp, 4
-mov esp, 0xFFFFFFE8
-sti
+pop ebp
+mov esp, ebp
+mov cr3, edx
 iret
 
 ISR_00:
-cli
 pushad
 mov edx, 0x20
 jmp ISR_G
 
 ISR_01:
-cli
 pushad
 mov edx, 0x21
 jmp ISR_G
 
 ISR_02:
-cli
 pushad
 mov edx, 0x22
 jmp ISR_G
 
 ISR_03:
-cli
 pushad
 mov edx, 0x23
 jmp ISR_G
 
 ISR_04:
-cli
 pushad
 mov edx, 0x24
 jmp ISR_G
 
 ISR_05:
-cli
 pushad
 mov edx, 0x25
 jmp ISR_G
 
 ISR_06:
-cli
 pushad
 mov edx, 0x26
 jmp ISR_G
 
 ISR_07:
-cli
 pushad
 mov edx, 0x27
 jmp ISR_G
 
 ISR_08:
-cli
 pushad
 mov edx, 0x28
 jmp ISR_G
 
 ISR_09:
-cli
 pushad
 mov edx, 0x29
 jmp ISR_G
 
 ISR_0A:
-cli
 pushad
 mov edx, 0x2A
 jmp ISR_G
 
 ISR_0B:
-cli
 pushad
 mov edx, 0x2B
 jmp ISR_G
 
 ISR_0C:
-cli
 pushad
 mov edx, 0x2C
 jmp ISR_G
 
 ISR_0D:
-cli
 pushad
 mov edx, 0x2D
 jmp ISR_G
 
 ISR_0E:
-cli
 pushad
 mov edx, 0x2E
 jmp ISR_G
 
 ISR_10:
-cli
 pushad
 mov edx, 0x30
 jmp ISR_G
 
 ISR_11:
-cli
 pushad
 mov edx, 0x31
 jmp ISR_G
 
 ISR_12:
-cli
 pushad
 mov edx, 0x32
 jmp ISR_G
 
 ISR_13:
-cli
 pushad
 mov edx, 0x33
 jmp ISR_G
 
 ISR_14:
-cli
 pushad
 mov edx, 0x34
 jmp ISR_G
 
 ISR_15:
-cli
 pushad
 mov edx, 0x35
 jmp ISR_G
 
 ISR_1C:
-cli
 pushad
 mov edx, 0x3C
 jmp ISR_G
 
 ISR_1D:
-cli
 pushad
 mov edx, 0x3D
 jmp ISR_G
 
 ISR_1E:
-cli
 pushad
 mov edx, 0x3E
 jmp ISR_G
 
-[extern farSchedulerEntry]
-[extern processManager]
 ISR_G:
 mov ebp, esp
 mov eax, cr3
@@ -373,29 +337,47 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ0:
 cli
-pushad
-mov ebp, esp
+mov DWORD [tebp + 0xffc00000], ebp ; for restoring state
+mov ebp, [esp+12] ; get userland esp
+
+push eax
+push ecx
+push edx
+push ebx
+push ebp ; actually esp
+
+mov ebp, DWORD [tebp + 0xffc00000] ; the actual ebp
+push ebp
+
+push esi
+push edi
+
 mov eax, cr3
 push eax
-mov ebx, esp
-mov eax, 0xc000
-mov cr3, eax ;Change to kernel PD
-push ebx
-call 0x8:farSchedulerEntry
-add esp, 4
-pop eax
-mov cr3, eax ;Restore PD
-popad
+
+mov ebp, esp
+
+mov eax, 0xc000 ; change to kernel PD
+mov cr3, eax
+
+mov al, 0x20 ;Tell PIC we handled the interupt
+out 0x20, al
+
+call 0x8:farSchedulerEntry_asm
+
+pop eax ; restore userland PD
+mov cr3, eax
+
+popad ; will skip esp
 sti
 iret
 
+[extern processManager]
 IRQ1:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -408,11 +390,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ2:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -425,11 +405,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ3:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -442,11 +420,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ4:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -459,11 +435,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ5:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -476,11 +450,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ6:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -493,11 +465,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ7:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -510,11 +480,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ8:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -527,11 +495,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQ9:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -544,11 +510,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQA:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -561,11 +525,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQB:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -578,11 +540,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQC:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -595,11 +555,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQD:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -612,11 +570,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQE:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -629,11 +585,9 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 IRQF:
-cli
 pushad
 mov ebp, esp
 mov eax, cr3
@@ -646,7 +600,6 @@ add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
-sti
 iret
 
 ISR_END:
@@ -683,28 +636,41 @@ dw 0
 
 [extern ISR20_handler]
 ISR20_asm:
-cli
-pushad
+mov DWORD [tebp], ebp ; store ebp for saving state
+mov ebp, esp ; get kernel esp
+add ebp, 16
+
+push eax
+push ecx
+push edx
+push ebx
+push ebp ; actually esp
+
+mov ebp, DWORD [tebp] ; the actual ebp
+push ebp
+
+push esi
+push edi
+
+push 0xc000 ; push cr3
+
+mov ebp, esp
 
 mov al, 0x20 ;Tell PIC we handled the interupt
 out 0x20, al
 
-push 0xc000
-mov eax, esp
-push eax
+push ebp
 call ISR20_handler
-add esp, 0x4
-pop eax
+add esp, 8
 
-
-popad
-sti
+popad ; will skip esp
 iret
+
+tebp: dd 0
 
 [extern ISR21_handler]
 
 ISR21_asm:
-cli
 pushad
 
 xor eax, eax ;Get current keystoke byte
@@ -718,13 +684,11 @@ mov al, 0x20 ;Tell PIC we handled the interupt
 out 0x20, al
 
 popad
-sti
 iret
 
 [extern ISR2AB_handler]
 
 ISR2A_asm:
-cli
 pushad
 
 mov eax, 0x2a
@@ -736,11 +700,9 @@ mov al, 0x20 ;Tell PIC we handled the interupt
 out 0xa0, al
 out 0x20, al
 popad
-sti
 iret
 
 ISR2B_asm:
-cli
 pushad
 
 mov eax, 0x2b
@@ -751,12 +713,10 @@ add esp, 4
 mov al, 0x20
 out 0x20, al
 popad
-sti
 iret
 
 [global setSysTables]
 setSysTables:
-cli
 lgdt [0xFFC06138]
 push ax
 mov ax, 40
@@ -764,4 +724,9 @@ ltr ax
 pop ax
 ret
 
-;NOTE: We can't pad out this file because this file goes to the begining of the kernel (not the end)
+[extern farSchedulerEntry]
+farSchedulerEntry_asm:
+push ebp
+call farSchedulerEntry
+add esp, 4
+retf
