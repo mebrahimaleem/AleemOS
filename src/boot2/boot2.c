@@ -15,6 +15,7 @@
 #include <utils.h>
 #include <signals.h>
 #include <process.h>
+#include <processScheduler.h>
 #include <pci.h>
 #include <xhci.h>
 #include <kbd.h>
@@ -57,6 +58,11 @@ void boot2(void){
 
 	//Setup keyboard
 	KBDResetMods();
+
+	// Start process scheduling
+	resetProcessDivs();
+	initScheduler();
+	schedulerStatus = 0;
 
 	//Setup signals
 	initSignals();
@@ -105,7 +111,6 @@ void boot2(void){
 	GDT = (DTentry*)0xBFD0;
 
 	//Setup process sections and paging structures	
-	resetProcessDivs();
 	processSetup defAppSetup = setupProcess((uint8_t*)0x800);
 
 	if (defAppSetup.res != 0){
@@ -113,7 +118,7 @@ void boot2(void){
 		vgaprintint(defAppSetup.res, 10, 0x0F);
 		vgaprint((volatile char* volatile)"] : Bad Executable", 0x0F);
 
-		goto hang;
+		hang();
 	}
 	
 	//Install User Data and Code Segments
@@ -160,6 +165,7 @@ void boot2(void){
 	GDT[5].bas2 = (uint8_t)((uint32_t)kTSS >> 24);
 
 #ifdef KERNEL_DEBUG
+	// wait for key press
 	vgaprint((volatile char* volatile)"Press Any Key To Continue...\n", 0x0F);
 
 	setKBDEventTrack(1);
@@ -175,25 +181,31 @@ void boot2(void){
 	}
 #endif
 	
-	// wait for key press
-
-	//Setup system tables
-	setSysTables();
-
 	defApp = &defAppSetup.state;
-	defApp->IDN = 1;
+	defApp->PID= 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
+	defApp->priority = 1;
 
+	clearVGA();
+	setSysTables();
 	transferFromBoot2();
 
-hang:
-	while (1) asm volatile ("hlt" : : : "memory");
 }
 
 void transferFromBoot2() {
 	kTSS->ss0 = 2 * 8;
 	kTSS->esp0 = 0xFFFFFFFC;
 
-	clearVGA();
-	createProcess(defApp, 0);
+	//clearVGA();
+	scheduleProcess(defApp);
+
+	asm volatile ("sti" : : : "memory");
+	
+	killProcess();
+
+	hang();
+}
+
+void hang() {
+	while (1) asm volatile ("hlt" : : : "memory");
 }

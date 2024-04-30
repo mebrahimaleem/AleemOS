@@ -2,6 +2,10 @@
 //
 //Implementations for process management
 
+#define GET_PAGE_DIV(x) (uint8_t)((pageDivs[x/8] & (1 << (x%8))) >> x%8)
+#define SET_PAGE_DIV(x) (pageDivs[x/8] = (uint8_t)(pageDivs[x/8] | (1 << (x%8))))
+#define UNSET_PAGE_DIV(x) (pageDivs[x/8] = (uint8_t)(pageDivs[x/8] & (~(1 << (x%8)))))
+
 #include <stdint.h>
 #include <kernel.h>
 #include <memory.h>
@@ -10,50 +14,30 @@
 #include <signals.h>
 #include <process.h>
 #include <taskSwitch.h>
+#include <processScheduler.h>
 
 processState* processStack = 0;
 
-bool1 pageDivs[1024];
+uint8_t pageDivs[128];
+uint32_t nextPID = 0;
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 //Start a process
-void startProcess(processState* state, uint8_t toStart){
-	addProcess(state->IDN);
-	if (toStart == 1) {
+void startProcess(processState* state){
+	if ((state->priority & 0x80) == 0x80) {
 		state->eax = state->argc;
 		state->ebx = state->argv;
 		state->ecx = state->HS;
+		state->priority = state->priority & 0x7F;
 	}
 	taskSwitch((uint32_t)state);
 }
 #pragma GCC pop_options
 
-
-//Creates and starts a new process with the processState 'state'
-void createProcess(processState* state, processState* cstate){
-	if (processStack == 0) {
-		processStack = state;
-		processStack->next = 0;
-	}
-	else {
-		state->next = cstate;
-		cstate->next = processStack->next;
-		processStack = state;
-	}
-	startProcess(processStack, 1);	
-}
-
-//Kills the current, returns 0 if no processes remain
-uint32_t killProcess(){
-	if (processStack == 0) return 0;
-	processState* tmp = processStack;
-	processStack = processStack->next;
-	free(tmp);
-	if (processStack == 0) return 0;
-
-	startProcess(processStack, 0);
-	return 1;
+//Kills the current process
+void killProcess(){
+	unscheduleCurrentProcess();
 }
 
 processSetup setupProcess(uint8_t* volatile src){
@@ -64,7 +48,7 @@ processSetup setupProcess(uint8_t* volatile src){
 	//Find page divisions (2) for the process
 	uint16_t pageDiv1 = 0, pageDiv2 = 0;
 	for (i = 1; i < 1022; i++){
-		if (pageDivs[i].b == 1){
+		if (GET_PAGE_DIV(i) == 1){
 			if (pageDiv1 == 0){
 				pageDiv1 = i;
 				continue;
@@ -146,8 +130,8 @@ processSetup setupProcess(uint8_t* volatile src){
 	UHS -= pagingB;
 	UHS += 0xFF800000;
 
-	pageDivs[pageDiv1].b = 0;
-	pageDivs[pageDiv2].b = 0;
+	UNSET_PAGE_DIV(pageDiv1);
+	UNSET_PAGE_DIV(pageDiv2);
 
 	ret.codeB = progB;
 	ret.state.eax = 
@@ -158,45 +142,24 @@ processSetup setupProcess(uint8_t* volatile src){
 		ret.state.edi = 0;
 
 	ret.state.esp = 
-		ret.state.ebp = 0xFFC00000 - 4;
+		ret.state.ebp = 0xFFC00000 - 4; //subtract 0x14 to make room for the iret frame
 
 	ret.state.eip = entry;
 	ret.state.cr3 = pagingB;
 	ret.state.eflags = 0x200;
 	ret.state.HS = UHS;
 
-	ret.utss.link = 48;
-	ret.utss.esp0 = 0xFFFFFFFc;
-	ret.utss.esp1 =
-		ret.utss.esp2 = 0x7c00;
-	ret.utss.ss0 =
-		ret.utss.ss1 =
-		ret.utss.ss2 = 16;
-	ret.utss.cr3 = pagingB;
-	ret.utss.eip = entry;
-	ret.utss.eflags = 0x200;
-	ret.utss.eax =
-		ret.utss.ecx =
-		ret.utss.edx =
-		ret.utss.ebx =
-		ret.utss.esi =
-		ret.utss.edi =
-		ret.utss.ldtd = 0;
-	ret.utss.esp =
-		ret.utss.ebp = 0xFFC00000 - 4;
-	ret.utss.es =
-		ret.utss.ss =
-		ret.utss.ds =
-		ret.utss.fs =
-		ret.utss.gs = 32 | 3;
-	ret.utss.cs = 24 | 3;
-	ret.utss.IOPB = 0x68;
+	ret.state.PID = nextPID;
+	nextPID++;
 
+	addProcess(ret.state.PID);
 	ret.res = 0;
 	return ret;
 }
 
 void resetProcessDivs(){
-	pageDivs[0].b = 0;
-	for (uint16_t i = 1; i < 1023; i++) pageDivs[i].b = 1;
+	nextPID = 1;
+	UNSET_PAGE_DIV(0);
+	for (uint16_t i = 1; i < 1023; i++) SET_PAGE_DIV(i);
+	return;
 }

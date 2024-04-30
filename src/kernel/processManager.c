@@ -7,6 +7,7 @@
 #include <process.h>
 #include <kbd.h>
 #include <boot2.h>
+#include <processScheduler.h>
 
 uint32_t last_exitcode = 0;
 
@@ -20,7 +21,6 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 		case 0: //kill(exitcode)
 			last_exitcode = params;
 			killProcess();
-			transferFromBoot2(); // If kill process returns then there were no processes on the stack.
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
@@ -66,20 +66,12 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 //processManager is meant for handling exception caused interupts, IRQs
 void processManager(uint32_t cs, uint32_t check){
 	//Check for kill process
-	if (check == 0){
-		last_exitcode = 1;
+	if ((check & 0x20) == 0x20){
+		last_exitcode = check;
+		vgaprint((volatile char* volatile)"An exception has occured! Error code: ", 0x40);
+		vgaprintint(check - 0x20, 16, 0x40);
+		vgaprint((volatile char* volatile)"\n", 0x40);
 		killProcess();
-
-		//If killProcess returned it means that it failed to start the previous process (probably because it doesn't exist)
-		transferFromBoot2();
-	}
-
-	//Check for IRQ0
-	else if (check == 1) {
-		kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
-		kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
-		kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
-		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax");
 	}
 
 	//Check for IRQ1

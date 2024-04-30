@@ -438,55 +438,55 @@ dw 0
 align 4
 
 IDT_start:
-ISR_INT ISR_00 ;int 0x00 - Divide by zero
-ISR_INT ISR_01 ;int 0x01 - Debug
-ISR_INT ISR_02 ;int 0x02 - NMI
-ISR_INT ISR_03 ;int 0x03 - Breakpoint
-ISR_INT ISR_04 ;int 0x04 - Overflow
-ISR_INT ISR_05 ;int 0x05 - Out of bounds
-ISR_INT ISR_06 ;int 0x06 - Bad Op
-ISR_INT ISR_07 ;int 0x07 - FPU not available
-ISR_INT ISR_08 ;int 0x08 - Double Fault
-ISR_INT ISR_09 ;int 0x09 - Segment overrun
-ISR_INT ISR_0A ;int 0x0A - Bad TSS
-ISR_INT ISR_0B ;int 0x0B - Missing Segment
-ISR_INT ISR_0C ;int 0x0C - SS Fault
-ISR_INT ISR_0D ;int 0x0D - GP Fault
-ISR_INT ISR_0E ;int 0x0E - PF
+ISR_TRAP ISR_00 ;int 0x00 - Divide by zero
+ISR_TRAP ISR_01 ;int 0x01 - Debug
+ISR_TRAP ISR_02 ;int 0x02 - NMI
+ISR_TRAP ISR_03 ;int 0x03 - Breakpoint
+ISR_TRAP ISR_04 ;int 0x04 - Overflow
+ISR_TRAP ISR_05 ;int 0x05 - Out of bounds
+ISR_TRAP ISR_06 ;int 0x06 - Bad Op
+ISR_TRAP ISR_07 ;int 0x07 - FPU not available
+ISR_TRAP ISR_08 ;int 0x08 - Double Fault
+ISR_TRAP ISR_09 ;int 0x09 - Segment overrun
+ISR_TRAP ISR_0A ;int 0x0A - Bad TSS
+ISR_TRAP ISR_0B ;int 0x0B - Missing Segment
+ISR_TRAP ISR_0C ;int 0x0C - SS Fault
+ISR_TRAP ISR_0D ;int 0x0D - GP Fault
+ISR_TRAP ISR_0E ;int 0x0E - PF
 dq 0 ;int 0x0F - Reserved
-ISR_INT ISR_10 ;int 0x10 - x87 Float exception
-ISR_INT ISR_11 ;int 0x11 - Alignment check
-ISR_INT ISR_12 ;int 0x12 - Machine check
-ISR_INT ISR_13 ;int 0x13 - SMID exception
-ISR_INT ISR_14 ;int 0x14 - Virtualization exception
-ISR_INT ISR_15 ;int 0x15 - Control exception
+ISR_TRAP ISR_10 ;int 0x10 - x87 Float exception
+ISR_TRAP ISR_11 ;int 0x11 - Alignment check
+ISR_TRAP ISR_12 ;int 0x12 - Machine check
+ISR_TRAP ISR_13 ;int 0x13 - SMID exception
+ISR_TRAP ISR_14 ;int 0x14 - Virtualization exception
+ISR_TRAP ISR_15 ;int 0x15 - Control exception
 dq 0 ;int 0x16 - Reserved
 dq 0 ;int 0x17 - Reserved
 dq 0 ;int 0x18 - Reserved
 dq 0 ;int 0x19 - Reserved
 dq 0 ;int 0x1A - Reserved
 dq 0 ;int 0x1B - Reserved
-ISR_INT ISR_1C ;int 0x1C - Hypervisor exception
-ISR_INT ISR_1D ;int 0x1D - VMM Comms exception
-ISR_INT ISR_1E ;int 0x1E - Security exception
+ISR_TRAP ISR_1C ;int 0x1C - Hypervisor exception
+ISR_TRAP ISR_1D ;int 0x1D - VMM Comms exception
+ISR_TRAP ISR_1E ;int 0x1E - Security exception
 dq 0 ;int 0x1F - Reserved
 
-ISR_TRAP ISR_20 ;IRQ 0x00 - Master Timer
-ISR_TRAP ISR_21 ;IRQ 0x01 - Master keyboard
+ISR_INT ISR_20 ;IRQ 0x00 - Master Timer
+ISR_INT ISR_21 ;IRQ 0x01 - Master keyboard
 dq 0 ;IRQ 0x02 - Cascade
-ISR_TRAP ISR_23 ;IRQ 0x03 - Master COM2
-ISR_TRAP ISR_24 ;IRQ 0x04 - Master COM1
-ISR_TRAP ISR_25 ;IRQ 0x05 - Master LPT2
-ISR_TRAP ISR_26 ;IRQ 0x06 - Master floppy
-ISR_TRAP ISR_27 ;IRQ 0x07 - Master LPT1 OR Spurious
-ISR_TRAP ISR_28 ;IRQ 0x08 - Slave CMOS
-ISR_TRAP ISR_29 ;IRQ 0x09 - Slave free (for devices)
-ISR_TRAP ISR_2A ;IRQ 0x0A - Slave free (for devices)
-ISR_TRAP ISR_2B ;IRQ 0x0B - Slave free (for devices)
-ISR_TRAP ISR_2C ;IRQ 0x0C - Slave PC2 mouse
-ISR_TRAP ISR_2D ;IRQ 0x0D - Slave FPU OR Co/Inter-processor
-ISR_TRAP ISR_2E ;IRQ 0x0E - Slave primary ATA
-ISR_TRAP ISR_2F ;IRQ 0x0F - Slave secondary ATA
+ISR_INT ISR_23 ;IRQ 0x03 - Master COM2
+ISR_INT ISR_24 ;IRQ 0x04 - Master COM1
+ISR_INT ISR_25 ;IRQ 0x05 - Master LPT2
+ISR_INT ISR_26 ;IRQ 0x06 - Master floppy
+ISR_INT ISR_27 ;IRQ 0x07 - Master LPT1 OR Spurious
+ISR_INT ISR_28 ;IRQ 0x08 - Slave CMOS
+ISR_INT ISR_29 ;IRQ 0x09 - Slave free (for devices)
+ISR_INT ISR_2A ;IRQ 0x0A - Slave free (for devices)
+ISR_INT ISR_2B ;IRQ 0x0B - Slave free (for devices)
+ISR_INT ISR_2C ;IRQ 0x0C - Slave PC2 mouse
+ISR_INT ISR_2D ;IRQ 0x0D - Slave FPU OR Co/Inter-processor
+ISR_INT ISR_2E ;IRQ 0x0E - Slave primary ATA
+ISR_INT ISR_2F ;IRQ 0x0F - Slave secondary ATA
 
 times 8 dq 0
 IDT_end:
@@ -520,7 +520,6 @@ ISR1D_S db "#VC", 0
 ISR1E_S db "#SX", 0
 
 ISR_00:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR00_S
@@ -528,7 +527,6 @@ call pm_print
 jmp $
 
 ISR_01:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR01_S
@@ -536,7 +534,6 @@ call pm_print
 iret
 
 ISR_02:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR02_S
@@ -544,7 +541,6 @@ call pm_print
 jmp $
 
 ISR_03:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR03_S
@@ -552,7 +548,6 @@ call pm_print
 iret
 
 ISR_04:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR04_S
@@ -560,7 +555,6 @@ call pm_print
 jmp $
 
 ISR_05:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR05_S
@@ -568,7 +562,6 @@ call pm_print
 jmp $
 
 ISR_06:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR06_S
@@ -576,7 +569,6 @@ call pm_print
 jmp $
 
 ISR_07:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR07_S
@@ -584,7 +576,6 @@ call pm_print
 jmp $
 
 ISR_08:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR08_S
@@ -595,7 +586,6 @@ ISR_09:
 iret
 
 ISR_0A:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0A_S
@@ -603,7 +593,6 @@ call pm_print
 jmp $
 
 ISR_0B:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0B_S
@@ -611,7 +600,6 @@ call pm_print
 jmp $
 
 ISR_0C:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0C_S
@@ -619,7 +607,6 @@ call pm_print
 jmp $
 
 ISR_0D:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0D_S
@@ -627,7 +614,6 @@ call pm_print
 jmp $
 
 ISR_0E:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR0E_S
@@ -635,7 +621,6 @@ call pm_print
 jmp $
 
 ISR_10:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR10_S
@@ -643,7 +628,6 @@ call pm_print
 jmp $
 
 ISR_11:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR11_S
@@ -651,7 +635,6 @@ call pm_print
 jmp $
 
 ISR_12:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR12_S
@@ -659,7 +642,6 @@ call pm_print
 jmp $
 
 ISR_13:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR13_S
@@ -667,7 +649,6 @@ call pm_print
 jmp $
 
 ISR_14:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR14_S
@@ -675,7 +656,6 @@ call pm_print
 jmp $
 
 ISR_15:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR15_S
@@ -683,7 +663,6 @@ call pm_print
 jmp $
 
 ISR_1C:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1C_S
@@ -691,7 +670,6 @@ call pm_print
 jmp $
 
 ISR_1D:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1D_S
@@ -699,7 +677,6 @@ call pm_print
 jmp $
 
 ISR_1E:
-cli
 mov si, ISR_S
 call pm_print
 mov si, ISR1E_S
@@ -710,7 +687,6 @@ jmp $
 																			;	presses, it only needs to give it to other applications, which will be implemented in the ring 1/2 IDT's ISRs.
 
 ISR_20:
-cli
 
 ;Save registers
 push eax
@@ -733,11 +709,9 @@ out PIC1_CMD, al
 pop ebx
 pop eax
 
-sti
 iret
 
 ISR_21:
-cli
 push eax
 
 in al, 0x60 ;Get keyscan to keep keyboard buffer clean
@@ -746,56 +720,44 @@ mov al, 0x20
 out PIC1_CMD, al
 
 pop eax
-sti
 iret
 
 ISR_22:
-cli
 push eax
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_23:
-cli
 push eax
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_24:
-cli
 push eax
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_25:
-cli
 push eax
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_26:
-cli
 push eax
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_27:
-cli
 push eax
 mov al, 0x0b
 out PIC1_CMD, al
@@ -808,81 +770,65 @@ mov al, 0x20
 out PIC1_CMD, al
 .spurious:
 pop eax
-sti
 iret
 
 ISR_28:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_29:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2A:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2B:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2C:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2D:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2E:
-cli
 push eax
 mov al, 0x20
 out PIC2_CMD, al
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ISR_2F:
-cli
 push eax
 mov al, 0x0b
 out PIC2_CMD, al
@@ -897,7 +843,6 @@ out PIC2_CMD, al
 mov al, 0x20
 out PIC1_CMD, al
 pop eax
-sti
 iret
 
 ;GDT
