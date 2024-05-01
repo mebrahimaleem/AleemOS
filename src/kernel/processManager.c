@@ -15,7 +15,7 @@ uint32_t last_exitcode = 0;
 #pragma GCC optimize("O0")
 
 //sysCall is meant for handling system calls from userland
-uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
+uint32_t sysCall(uint32_t call, uint32_t params){
 	uint32_t ret = 0;
 	switch (call){
 		case 0: //kill(exitcode)
@@ -58,13 +58,11 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 			break;
 	}
 
-	//We need to execute a far return
-	asm volatile ("mov eax, %0 \n leave \n retf" : : "m"(ret), "m"(cs) : "memory");
-	return 0;
+	return ret;
 }
 
 //processManager is meant for handling exception caused interupts, IRQs
-void processManager(uint32_t cs, uint32_t check){
+void processManager(uint32_t check){
 	//Check for kill process
 	if ((check & 0x20) == 0x20){
 		last_exitcode = check;
@@ -111,7 +109,6 @@ void processManager(uint32_t cs, uint32_t check){
 		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory");
 	}
 
-	//We need to execute a far return
-	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
+	return;
 }
 #pragma GCC pop_options

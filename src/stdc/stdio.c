@@ -26,7 +26,7 @@ int printf(const char* format, ...){
 					sptr = itoa((int)va_arg(args, int), 10);
 					for (is = sptr; *is != 0; is++){
 						ret++;
-						asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*is) : "memory");
+						_syscall(1, (uint32_t)*is);
 					}
 					free(sptr);
 					break;
@@ -34,7 +34,7 @@ int printf(const char* format, ...){
 					sptr = itoa((int)va_arg(args, int), 36);
 					for (is = sptr; *is != 0; is++){
 						ret++;
-						asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*is) : "memory");
+						_syscall(1, (uint32_t)*is);
 					}
 					free(sptr);
 					break;
@@ -42,7 +42,7 @@ int printf(const char* format, ...){
 					sptr = itoa((int)va_arg(args, int), 8);
 					for (is = sptr; *is != 0; is++){
 						ret++;
-						asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*is) : "memory");
+						_syscall(1, (uint32_t)*is);
 					}
 					free(sptr);
 					break;
@@ -50,7 +50,7 @@ int printf(const char* format, ...){
 					sptr = itoa((int)va_arg(args, int), 16);
 					for (is = sptr; *is != 0; is++){
 						ret++;
-						asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*is) : "memory");
+						_syscall(1, (uint32_t)*is);
 					}
 					free(sptr);
 					break;
@@ -58,13 +58,13 @@ int printf(const char* format, ...){
 					sptr = (char*)va_arg(args, char*);
 					for (is = sptr; *is != 0; is++){
 						ret++;
-						asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*is) : "memory");
+						_syscall(1, (uint32_t)*is);
 					}
 					break;
 				case 'c':
 					ret++;
 					//NOTE: char is promoted to int when using ...
-					asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)va_arg(args, int)) : "memory");
+					_syscall(1, (uint32_t)va_arg(args, int));
 					break;
 				default: //Bad specifier
 					return -1;
@@ -73,7 +73,7 @@ int printf(const char* format, ...){
 
 		else{
 			ret++;
-			asm volatile ("pushad \n push 1 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)*i) : "memory");
+			_syscall(1, (uint32_t)*i);
 		}
 	}
 
@@ -93,15 +93,12 @@ int scanf(const char* format, ...){
 			switch (*i){
 				case 'c':
 					ret++;
-					asm volatile ("pushad \n push 3 \n push 0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n mov [esp-4], eax \n popad \n mov %0, dword [esp-40]"
-					 	: "=b"(buf) : : "memory"); //NOTE: esp-40 Should actually be esp-36, but gcc subtracts 4 (still compiles to esp-36, esp-36 would compile to esp-32)
-					*(char*)(va_arg(args, char*)) = (char)buf;
+					*(char*)(va_arg(args, char*)) = (char)_syscall(3, 0);
 					break;
 				case 's':
 					ci = (char*)(va_arg(args, char*));
 					while (1){
-						asm volatile ("pushad \n push 3 \n push 0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n mov [esp-4], eax \n popad \n mov %0, dword [esp-40]"
-							: "=b"(buf) : : "memory"); //NOTE: esp-40 Should actually be esp-36, but gcc subtracts 4 (still compiles to esp-36, esp-36 would compile to esp-32)
+						buf = _syscall(3, 0);
 						if ((char)buf == ' ' || (char)buf == '\n'){
 							if ((char)buf == (uint8_t)*(i+1) && (char)buf != '%') i++;
 							break;
@@ -118,8 +115,7 @@ int scanf(const char* format, ...){
 			}
 		}
 		else {
-			asm volatile ("pushad \n push 3 \n push 0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n mov %0, eax \n popad" : "=m"(buf) : : "memory");
-			if ((uint8_t)buf != (uint8_t)*i) return -1;
+			if ((uint8_t)_syscall(3, 0) != (uint8_t)*i) return -1;
 			continue;
 		}
 	}

@@ -184,24 +184,20 @@ UIDT_start:
 UIDT_end:
 
 [extern sysCall]
-ISR_SYSCALL:
-mov ebp, esp
-mov esp, eax
-mov ebx, [esp]
-mov ecx, [esp+4]
-mov esp, ebp
-mov edx, cr3
-mov eax, 0xc000
-mov cr3, eax
-push ebp
+sysCall_pass:
 push edx
 push ebx
-push ecx
-call 0x8:sysCall
+push eax
+call sysCall
 add esp, 8
 pop edx
-pop ebp
-mov esp, ebp
+retf
+
+ISR_SYSCALL:
+mov edx, cr3
+mov ecx, 0xc000
+mov cr3, ecx
+call 0x8:sysCall_pass
 mov cr3, edx
 iret
 
@@ -331,13 +327,19 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push edx
-call 0x8:processManager ; we need to do a far call because a near/short jump does to the wrong address (due to how high memory is mapped)
-add esp, 4
+call 0x8:processManager_pass ; we need to do a far call because a near/short jump does to the wrong address (due to how high memory is mapped)
 pop eax
 mov cr3, eax ;Restore PD
 popad
 iret
+
+
+[extern processManager]
+processManager_pass:
+push edx
+call processManager
+add esp, 4
+retf
 
 IRQ0_pass:
 jmp 0x8:ISR20_asm_R ; we need to far jump because a near/short jump goes to the wrong address (due to how the high memory is mapped)
@@ -380,10 +382,8 @@ mov cr3, eax
 popad ; will skip esp
 iret
 
-[extern processManager]
 IRQG:
-call 0x8:processManager
-add esp, 4
+call 0x8:processManager_pass
 pop eax
 mov cr3, eax ;Restore PD
 popad
@@ -396,7 +396,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 2
+mov edx, 2
 jmp IRQG
 
 IRQ2:
@@ -406,7 +406,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 3
+mov edx, 3
 jmp IRQG
 
 IRQ3:
@@ -416,7 +416,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 4
+mov edx, 4
 jmp IRQG
 
 IRQ4:
@@ -426,7 +426,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 5
+mov edx, 5
 jmp IRQG
 
 IRQ5:
@@ -436,7 +436,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 6
+mov edx, 6
 jmp IRQG
 
 IRQ6:
@@ -446,7 +446,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 7
+mov edx, 7
 jmp IRQG
 
 IRQ7:
@@ -456,7 +456,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 8
+mov edx, 8
 jmp IRQG
 
 IRQ8:
@@ -466,7 +466,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 9
+mov edx, 9
 jmp IRQG
 
 IRQ9:
@@ -476,7 +476,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 10
+mov edx, 10
 jmp IRQG
 
 IRQA:
@@ -486,7 +486,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 11
+mov edx, 11
 jmp IRQG
 
 IRQB:
@@ -496,7 +496,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 12
+mov edx, 12
 jmp IRQG
 
 IRQC:
@@ -506,7 +506,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 13
+mov edx, 13
 jmp IRQG
 
 IRQD:
@@ -516,7 +516,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 14
+mov edx, 14
 jmp IRQG
 
 IRQE:
@@ -526,7 +526,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 15
+mov edx, 15
 jmp IRQG
 
 IRQF:
@@ -536,7 +536,7 @@ mov eax, cr3
 push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
-push 16
+mov edx, 16
 jmp IRQG
 
 ISR_END:
