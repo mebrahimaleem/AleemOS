@@ -332,18 +332,25 @@ push eax
 mov eax, 0xc000
 mov cr3, eax ;Change to kernel PD
 push edx
-call 0x8:processManager
+call 0x8:processManager ; we need to do a far call because a near/short jump does to the wrong address (due to how high memory is mapped)
 add esp, 4
 pop eax
 mov cr3, eax ;Restore PD
 popad
 iret
 
-IRQ0:
-mov DWORD [tebp + 0xffc00000], ebp ; for restoring state
-mov ebp, [esp+12] ; get userland esp
+IRQ0_pass:
+jmp 0x8:ISR20_asm_R ; we need to far jump because a near/short jump goes to the wrong address (due to how the high memory is mapped)
 
+IRQ0:
 push eax
+mov eax, cr3
+cmp eax, 0xc000
+je IRQ0_pass ; conditional jumps cannot be far jumps
+
+mov DWORD [tebp + 0xffc00000], ebp ; for restoring state
+mov ebp, [esp+16] ; get userland esp
+
 push ecx
 push edx
 push ebx
@@ -355,7 +362,6 @@ push ebp
 push esi
 push edi
 
-mov eax, cr3
 push eax
 
 mov ebp, esp
@@ -567,11 +573,13 @@ dw 0
 
 [extern ISR20_handler]
 ISR20_asm:
+push eax
+
+ISR20_asm_R:
 mov DWORD [tebp], ebp ; store ebp for saving state
 mov ebp, esp ; get kernel esp
-add ebp, 12
+add ebp, 16
 
-push eax
 push ecx
 push edx
 push ebx
@@ -649,6 +657,7 @@ iret
 [global setSysTables]
 setSysTables:
 lgdt [0xFFC06138]
+lidt [0xFFC0613E]
 push ax
 mov ax, 40
 ltr ax
