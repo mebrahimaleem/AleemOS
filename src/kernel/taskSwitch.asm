@@ -12,7 +12,6 @@ cli
 
 [extern k_idtd]
 mov eax, [k_idtd]
-lidt [eax]; 
 
 mov esi, [esp + 4] ; State pointer
 
@@ -35,8 +34,6 @@ mov esi, [esi + 16]
 iret
 
 trampolineEntry:
-lidt [0xFFC0613E]
-
 ; Prepare registers
 mov eax, [esi + 16]
 mov [r_esi + 0xffc00000], eax
