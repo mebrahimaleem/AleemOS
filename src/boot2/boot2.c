@@ -13,6 +13,7 @@
 #include <portio.h>
 #include <memory.h>
 #include <utils.h>
+#include <paging.h>
 #include <signals.h>
 #include <process.h>
 #include <processScheduler.h>
@@ -59,6 +60,10 @@ void boot2(void){
 	//Setup keyboard
 	KBDResetMods();
 
+	initPaging(); // Setup advanced paging
+	mapMemory4M(kernelPD, 0x00800000, 0x00800000, 3); // process
+	mapMemory4M(kernelPD, 0xffc00000, 0x00000000, 3); // high kernel memory
+
 	// Start process scheduling
 	resetProcessDivs();
 	initScheduler();
@@ -73,28 +78,11 @@ void boot2(void){
 	//Setup XHCI
 	initXHCIDriver();
 	
-	//For commenting purposes, page divisions are the continous blocks of 4MB of RAM (that a PT defines)
-	//First we need to add a new page table
-
-	for (uint32_t* i = (uint32_t*)(0x400000 - 0x2000); i < (uint32_t*)(0x400000 - 0x1000); i++)
-		*i = (((uint32_t)(i) + 0x2000 - 0x400000)/4 * 0x1000) | 3; //High kernel mapping, maps the final page division to the first physical memory block
-
-	for (uint32_t* i = (uint32_t*)(0x400000 - 0x1000); i < (uint32_t*)0x400000; i++)
-		*i = (((uint32_t)(i) + 0x1000 - 0x400000)/4 * 0x1000 + 0x400000) | 3; //Spare page table (later used when creating processes)
-
-	for (uint32_t* i = (uint32_t*)(0x400000 - 0x3000); i < (uint32_t*)(0x400000 - 0x2000); i++)
-		*i = 0; // Page table for drivers to use (to access IO Mapping Addresses)
-
-	*(uint32_t*)0xc004 = (0x400000 - 0x1000) | 3; // Second page division
-	*(uint32_t*)(0xd000-4) = (0x400000 - 0x2000) | 3; //Last page division
-	*(uint32_t*)(0xd000-8) = (0x400000 - 0x3000) | 3; // Second last Page division
-
-
-	uint16_t nextPT = 0;
+	uint32_t nextVaddr = 0xff800000;
 
 	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
 		if (i->type == USB_XHCI) {
-			nextPT = setupXHCIDevice(*i, nextPT);
+			nextVaddr = setupXHCIDevice(*i, nextVaddr);
 		}
 	}
 

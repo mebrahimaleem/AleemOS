@@ -10,4 +10,4 @@ typedef struct XHCIHostData{
 
 extern void initXHCIDriver(void);
 extern uint64_t _xhciGetMMIO(PCIEntry ent);
-extern uint16_t setupXHCIDevice(PCIEntry ent, uint16_t avPT);
+extern uint32_t setupXHCIDevice(PCIEntry ent, uint32_t avAddr);

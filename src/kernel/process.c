@@ -67,7 +67,7 @@ processSetup setupProcess(uint8_t* volatile src){
 	const uint32_t pagingB = pageDiv1 * 0x400000;
 	const uint32_t progB = pageDiv2 * 0x400000;
 
-	//Create update kernel paging structure to map executable
+	//update kernel paging structure to map executable
 	uint32_t* PD = (uint32_t*)0xc000;
 	uint32_t* PT = (uint32_t*)(0x400000 - 0x1000);	
 	PD[pageDiv1] = (0x400000 - 0x1000) | 3;

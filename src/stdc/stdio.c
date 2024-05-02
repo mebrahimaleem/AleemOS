@@ -120,6 +120,7 @@ int scanf(const char* format, ...){
 		}
 	}
 
+	_syscall(5, 0);
 	return (int)ret;
 }
 #pragma GCC pop_options

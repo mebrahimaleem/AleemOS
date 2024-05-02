@@ -10,6 +10,7 @@ INPUT
 	build/portio.elf
 	build/basicio.elf
 	build/utils.elf
+	build/paging.elf
 	build/signals.elf
 	build/pci.elf
 	build/xhci.elf

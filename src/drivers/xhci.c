@@ -3,10 +3,11 @@
 //Implementations for the XHCI driver
 
 #include <stdint.h>
-#define MMIO_SIZE 1 //In pages
+#define MMIO_SIZE 0x1000 //In bytes
 
 #include <memory.h>
 #include <basicio.h>
+#include <paging.h>
 #include <pci.h>
 #include <xhci.h>
 
@@ -25,13 +26,13 @@ uint64_t _xhciGetMMIO(PCIEntry ent) {
 		((uint64_t)(_pciReadDWord(ent.bus, ent.dev, ent.func, 0x14) & 0xFFFFFFFF) << 32);
 }
 
-uint16_t setupXHCIDevice(PCIEntry ent, uint16_t avPT) {
+uint32_t setupXHCIDevice(PCIEntry ent, uint32_t avAddr) {
 	uint64_t MMIOaddr = _xhciGetMMIO(ent);
-	if ((MMIOaddr >> 32) > 0) return avPT; // If address cannot be stored in 32 bits, we will skip this device (since this is a 32-bit OS)
+	if ((MMIOaddr >> 32) > 0) return avAddr; // If address cannot be stored in 32 bits, we will skip this device (since this is a 32-bit OS)
 
 	XHCIHostData xhciD;
-	*(volatile uint32_t* volatile)(0x400000 - 0x3000 + avPT * 4) = ((uint32_t)MMIOaddr & 0xFFFFF000)  | 3; //TODO: add more pages as needed
-	xhciD.vMMIO = (uint8_t*)(1 + 0xFFFFFFFF - 0x800000 + avPT * 0x1000);
+	mapMemory(kernelPD, avAddr, ((uint32_t)MMIOaddr & 0xFFFFF000), 3); // TODO: add more pages as needed
+	xhciD.vMMIO = (uint8_t*)avAddr;
 	xhciD.CAPLENGTH = *xhciD.vMMIO;
 
 	// Add to devices list
@@ -45,5 +46,5 @@ uint16_t setupXHCIDevice(PCIEntry ent, uint16_t avPT) {
 	*lastD = xhciD;
 	lastD->next = 0;
 
-	return avPT + MMIO_SIZE;
+	return avAddr + MMIO_SIZE;
 }

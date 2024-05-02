@@ -35,7 +35,6 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 			outb(0x3D5, (uint8_t)((params >> 8) & 0xFF));
 			break;
 		case 3: //getchar()
-			break;
 			setKBDEventTrack(1);
 			while (1){
 				if (KBDNextEvent != 0){
@@ -51,8 +50,12 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 				asm volatile ("sti \n hlt \n cli" : : : "memory");
 				continue;
 			}
+			break;
 		case 4: //getcursorpos()
 			ret = (uint32_t)(vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
+			break;
+		case 5: //lockcursor()
+			backslock = (uint32_t)vgacursor;
 			break;
 		default:
 			break;
