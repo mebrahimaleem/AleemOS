@@ -18,11 +18,11 @@ typedef struct processState {
 	uint32_t eflags;
 	uint32_t cr3;
 	uint32_t PID;
-	struct processState* next;
 	uint32_t argc;
 	uint32_t argv;
 	uint32_t HS;
 	uint8_t priority; //bits 0-6: priority; bit 7: toStart
+	uint16_t pti; // page table index in kernelPD
 } __attribute((packed)) processState;
 
 /*
@@ -31,7 +31,6 @@ typedef struct processState {
 typedef struct processSetup {
 	uint8_t res; //0 if process is ok, otherwise data is invalid
 	processState state; //processState for the new process
-	uint32_t codeB; //Base address for the start of the code
 
 } processSetup;
 

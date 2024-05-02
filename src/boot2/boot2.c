@@ -61,7 +61,6 @@ void boot2(void){
 	KBDResetMods();
 
 	initPaging(); // Setup advanced paging
-	mapMemory4M(kernelPD, 0x00800000, 0x00800000, 3); // process
 	mapMemory4M(kernelPD, 0xffc00000, 0x00000000, 3); // high kernel memory
 
 	// Start process scheduling
@@ -78,11 +77,11 @@ void boot2(void){
 	//Setup XHCI
 	initXHCIDriver();
 	
-	uint32_t nextVaddr = 0xff800000;
+	uint32_t nextDriverVaddr = DRIVER_VADDR_BASE;
 
 	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
 		if (i->type == USB_XHCI) {
-			nextVaddr = setupXHCIDevice(*i, nextVaddr);
+			nextDriverVaddr = setupXHCIDevice(*i, nextDriverVaddr);
 		}
 	}
 

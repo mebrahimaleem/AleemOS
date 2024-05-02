@@ -4,6 +4,9 @@
 
 //#define KERNEL_DEBUG
 
+#define DRIVER_VADDR_BASE 0xff400000
+#define PROCESS_VADDR_BASE 0x00400000
+
 extern volatile uint16_t k_KDATA;
 
 /*
