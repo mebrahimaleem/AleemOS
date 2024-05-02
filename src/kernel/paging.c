@@ -8,7 +8,7 @@ uint8_t* volatile nextPagingBase;
 uint32_t*** kernelPD;
 
 void initPaging(){
-	nextPagingBase = (uint32_t* volatile)0x3ff000;
+	nextPagingBase = (uint8_t* volatile)0x3ff000;
 	kernelPD = (uint32_t***)0xc000;
 }
 

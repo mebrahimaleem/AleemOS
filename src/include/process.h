@@ -23,6 +23,7 @@ typedef struct processState {
 	uint32_t HS;
 	uint8_t priority; //bits 0-6: priority; bit 7: toStart
 	uint32_t kHeapVaddr; // kernel virtual address to process' heap
+	struct processState* next;
 } __attribute((packed)) processState;
 
 /*
