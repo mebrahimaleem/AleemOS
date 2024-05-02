@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 #include "AleemOS.h"
 
 #pragma GCC push_options
@@ -56,10 +57,11 @@ int printf(const char* format, ...){
 					break;
 				case 's':
 					sptr = (char*)va_arg(args, char*);
-					for (is = sptr; *is != 0; is++){
-						ret++;
-						_syscall(1, (uint32_t)*is);
-					}
+					uint32_t slen = strlen(sptr);
+					ret += slen;
+					char* spr = (char*)malloc(slen+1);
+					strcpy(spr, sptr);
+					_syscall(6, (uint32_t)spr - __PROCESS_HEAP_BASE);
 					break;
 				case 'c':
 					ret++;

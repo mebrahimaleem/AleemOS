@@ -98,7 +98,7 @@ void boot2(void){
 	GDT = (DTentry*)0xBFD0;
 
 	//Setup process sections and paging structures	
-	processSetup defAppSetup = setupProcess((uint8_t*)0x800);
+	processSetup defAppSetup = setupProcess((uint8_t*)0x800, 1);
 
 	if (defAppSetup.res != 0){
 		vgaprint((volatile char* volatile)"ERROR [", 0x0F);
@@ -169,9 +169,7 @@ void boot2(void){
 #endif
 	
 	defApp = &defAppSetup.state;
-	defApp->PID= 1;
 	defApp->argc = 0; //Our first application does not care about the first argument (it already knows its /sh.elf) so don't pass it anything
-	defApp->priority = 1;
 
 	clearVGA();
 	setSysTables();

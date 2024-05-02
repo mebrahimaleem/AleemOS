@@ -22,7 +22,7 @@ typedef struct processState {
 	uint32_t argv;
 	uint32_t HS;
 	uint8_t priority; //bits 0-6: priority; bit 7: toStart
-	uint16_t pti; // page table index in kernelPD
+	uint32_t kHeapVaddr; // kernel virtual address to process' heap
 } __attribute((packed)) processState;
 
 /*
@@ -51,7 +51,7 @@ extern void killProcess(void);
 
 	Unlike the similar function in kernel/ELFParse.h, this function actually modifies the paging tables
 */
-extern processSetup setupProcess(uint8_t* volatile src);
+extern processSetup setupProcess(uint8_t* volatile src, uint8_t priority);
 
 /*
 	Resets current running processes memory and paging structure

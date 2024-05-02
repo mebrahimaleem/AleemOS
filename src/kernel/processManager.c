@@ -57,6 +57,12 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 		case 5: //lockcursor()
 			backslock = (uint32_t)vgacursor;
 			break;
+		case 6: //printstring(heapOffset)
+			vgaprint((volatile char* volatile)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params), 0x0F);
+			params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+			backslock = (uint32_t)vgacursor;
+			goto blink;
+			break;
 		default:
 			break;
 	}
@@ -115,3 +121,7 @@ void processManager(uint32_t check){
 	return;
 }
 #pragma GCC pop_options
+
+inline uint32_t procHeapToKVaddr(uint32_t kHeapVaddr, uint32_t heapOffset) {
+	return kHeapVaddr + heapOffset;
+}

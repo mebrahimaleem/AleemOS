@@ -35,7 +35,7 @@ void killProcess(){
 	unscheduleCurrentProcess();
 }
 
-processSetup setupProcess(uint8_t* volatile src){
+processSetup setupProcess(uint8_t* volatile src, uint8_t priority){
 	processSetup ret;
 	ret.res = 255;
 	
@@ -67,11 +67,11 @@ processSetup setupProcess(uint8_t* volatile src){
 		if (UHS < p->paddr + 0x1000) UHS = p->paddr + 0x1000;
 	}
 
-	// move heap under the stack
-	UHS += 0xff800000;
-
 	mapMemory4M((uint32_t***)UPD, 0xff800000, nextProcessVaddr, 7); // map heap and stack
 	mapMemory4M((uint32_t***)UPD, 0xffc00000, 0x00000000, 5); // map high kernel for interrupts only
+
+	ret.state.kHeapVaddr = nextProcessVaddr + UHS;
+	nextProcessVaddr += 0x00400000;
 
 	ret.state.eax = 
 		ret.state.ebx =
@@ -86,10 +86,15 @@ processSetup setupProcess(uint8_t* volatile src){
 	ret.state.eip = entry;
 	ret.state.cr3 = (uint32_t)UPD;
 	ret.state.eflags = 0x200;
+
+	// move heap under the stack
+	UHS += 0xff800000;
 	ret.state.HS = UHS;
 
 	ret.state.PID = nextPID;
 	nextPID++;
+
+	ret.state.priority = priority | 0x80;
 
 	addProcess(ret.state.PID);
 	ret.res = 0;
