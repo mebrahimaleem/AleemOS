@@ -7,13 +7,6 @@
 
 //The heap will be a linked list of BlockDescriptors. The next BlockDescriptor is 'size' bytes after the previous. Each descritor is 4 bytes large.
 
-
-//Block Descriptor Datastructure for Heap Allocation
-typedef struct BlockDescriptor {
-	uint32_t size : 30; //Size of block
-	uint32_t flags : 2; //0 = Last descriptor, 1 = Used, 2 = free
-} __attribute((packed)) BlockDescriptor;
-
 volatile BlockDescriptor* volatile HeapBase = (BlockDescriptor*)0x100000;
 
 //Sets up the kernel heap, root BlockDescriptor is @ 0x100000
@@ -22,10 +15,13 @@ void initHeap(void){
 	return;
 }
 
+inline void* malloc(volatile uint32_t size) {
+	return _malloc(size, HeapBase);
+}
+
 //Allocates a new block of memory of size 'size'
-inline void* malloc(volatile uint32_t size){
+void* _malloc(volatile uint32_t size, BlockDescriptor* block){
 	//New block descriptor to use
-	volatile BlockDescriptor* volatile block = HeapBase;
 	while (1){
 		if (block->flags == 0){ //Check if last BlockDescriptor (remainder of Heap is free)
 			block->flags = 1;

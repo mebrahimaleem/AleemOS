@@ -42,3 +42,5 @@ extern uint8_t strcmp(uint8_t* str1, uint8_t* str2);
 	returns the number of characters
 */
 extern uint32_t strlen(uint8_t* str);
+
+extern uint8_t* strcpy(uint8_t* dest, const uint8_t* src);

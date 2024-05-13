@@ -117,3 +117,13 @@ inline uint32_t strlen(uint8_t* str){
 	for (uint8_t* i = str; *i != 0; i++) ret++;
 	return ret;
 }
+
+inline uint8_t* strcpy(uint8_t* dest, const uint8_t* src){
+	uint8_t* i = dest;
+	for (const uint8_t* j = src; *j != 0; j++){
+		*i = *j;
+		i++;
+	} 
+	*i = 0;
+	return dest;
+}

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <kernel.h>
 #include <memory.h>
+#include <utils.h>
 #include <basicio.h>
 #include <paging.h>
 #include <ELFparse.h>
@@ -13,8 +14,8 @@
 #include <taskSwitch.h>
 #include <processScheduler.h>
 
-uint32_t nextProcessVaddr = 0;
-uint32_t nextPID = 0;
+uint32_t nextProcessVaddr;
+uint32_t nextPID;
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
@@ -22,7 +23,6 @@ uint32_t nextPID = 0;
 void startProcess(processState* state){
 	if ((state->priority & 0x80) == 0x80) {
 		state->eax = state->argc;
-		state->ebx = state->argv;
 		state->ecx = state->HS;
 		state->priority = state->priority & 0x7F;
 	}
@@ -35,9 +35,9 @@ void killProcess(){
 	unscheduleCurrentProcess();
 }
 
-processSetup setupProcess(uint8_t* volatile src, uint8_t priority){
-	processSetup ret;
-	ret.res = 255;
+processSetup setupProcess(uint8_t* volatile src, uint8_t priority, uint32_t argc, uint8_t** argv){
+	processSetup* ret = (processSetup*)malloc(sizeof(processSetup));
+	ret->res = 255;
 	
 	mapMemory4M(kernelPD, nextProcessVaddr, nextProcessVaddr, 3);
 	
@@ -47,14 +47,14 @@ processSetup setupProcess(uint8_t* volatile src, uint8_t priority){
 
 	//Get memory layout information from the executable
 	if (calcELF(src, &pages, &sz) != 0){
-		ret.res = 2; //Bad ELF
-		return ret;
+		ret->res = 2; //Bad ELF
+		return *ret;
 	}
 
 	//Copy executable
 	if (copyELF(src, (uint8_t*)nextProcessVaddr, &entry) != 0){ //Copy the file after we know the paging layout
-		ret.res = 2; //Bad ELF
-		return ret;
+		ret->res = 2; //Bad ELF
+		return *ret;
 	}
 
 	uint32_t* volatile UPD = allocPagingStruct();
@@ -70,35 +70,52 @@ processSetup setupProcess(uint8_t* volatile src, uint8_t priority){
 	mapMemory4M((uint32_t***)UPD, 0xff800000, nextProcessVaddr, 7); // map heap and stack
 	mapMemory4M((uint32_t***)UPD, 0xffc00000, 0x00000000, 5); // map high kernel for interrupts only
 
-	ret.state.kHeapVaddr = nextProcessVaddr + UHS;
+	ret->state.kHeapVaddr = nextProcessVaddr + UHS;
+
+	// pass argv via heap
+	if (argc != 0) {
+		*(uint32_t* volatile)(nextProcessVaddr + UHS) = 0;
+		const char** argv_b = (const char**)_malloc(argc * sizeof(char*), (BlockDescriptor*)(nextProcessVaddr + UHS));
+		
+		uint32_t nextStr = 0xff800000 + + UHS + 4 + argc * sizeof(char*);
+		for (uint32_t i = 0; i < argc; i++) {
+			const uint32_t strLen = strlen(argv[i]) + 1;
+			strcpy((uint8_t*)_malloc(strLen, (BlockDescriptor*)(nextProcessVaddr + UHS)), argv[i]);
+			argv_b[i] = (char*)(nextStr + 4);
+			nextStr += 4 + strLen;
+		}
+	}
+
 	nextProcessVaddr += 0x00400000;
 
-	ret.state.eax = 
-		ret.state.ebx =
-		ret.state.ecx =
-		ret.state.edx =
-		ret.state.esi =
-		ret.state.edi = 0;
+	ret->state.eax = 
+		ret->state.ebx =
+		ret->state.ecx =
+		ret->state.edx =
+		ret->state.esi =
+		ret->state.edi = 0;
 
-	ret.state.esp = 
-		ret.state.ebp = 0xFFC00000 - 4;
+	ret->state.esp = 
+		ret->state.ebp = 0xFFC00000 - 4;
 
-	ret.state.eip = entry;
-	ret.state.cr3 = (uint32_t)UPD;
-	ret.state.eflags = 0x200;
+	ret->state.eip = entry;
+	ret->state.cr3 = (uint32_t)UPD;
+	ret->state.eflags = 0x200;
 
 	// move heap under the stack
 	UHS += 0xff800000;
-	ret.state.HS = UHS;
+	ret->state.HS = UHS;
 
-	ret.state.PID = nextPID;
+	ret->state.PID = nextPID;
 	nextPID++;
 
-	ret.state.priority = priority | 0x80;
+	ret->state.priority = priority | 0x80;
 
-	addProcess(ret.state.PID);
-	ret.res = 0;
-	return ret;
+	ret->state.argc = argc;
+
+	addProcess(ret->state.PID);
+	ret->res = 0;
+	return *ret;
 }
 
 void resetProcessDivs(){

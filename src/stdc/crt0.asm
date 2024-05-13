@@ -9,10 +9,10 @@ _start:
 
 [extern __PROCESS_HEAP_BASE]
 mov [__PROCESS_HEAP_BASE], ecx
-mov DWORD [ecx], 0
+add ecx, 4
 
+push ecx
 push eax
-push ebx
 
 [extern main]
 call main
