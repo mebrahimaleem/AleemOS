@@ -15,6 +15,7 @@ INPUT
 	build/pci.elf
 	build/xhci.elf
 	build/kbd.elf
+	build/fat.elf
 	build/ELFparse.elf
 	build/process.elf
 	build/taskSwitch.elf

@@ -20,6 +20,7 @@
 #include <pci.h>
 #include <xhci.h>
 #include <kbd.h>
+#include <fat.h>
 #include <ELFparse.h>
 
 volatile uint8_t k_DRIVE_NO;
@@ -113,6 +114,10 @@ void boot2(void){
 
 		hang();
 	}
+
+
+	// init fs
+	nextDriverVaddr = fat_init(nextDriverVaddr);
 	
 	//Install User Data and Code Segments
 	//GDT
