@@ -24,7 +24,7 @@ extern void KBDResetMods(void);
 		2) copy KBDNextEvent->keyCode;
 		3) set KBDNextEvent = KBDNextEvent->next
 */
-extern KBDEventQueue* KBDNextEvent;
+extern KBDEventQueue* volatile KBDNextEvent;
 
 /*
 	Handler for PS/2 Keyboard IRQ

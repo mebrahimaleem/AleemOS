@@ -1,8 +1,7 @@
 //fat.h
 
 typedef struct {
-	uint8_t name [8];
-	uint8_t ex [3];
+	uint8_t name [11]; //last 3 bits are extension
 	uint8_t attr;
 	uint16_t res;
 	uint16_t create_tm;

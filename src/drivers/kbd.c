@@ -9,7 +9,7 @@
 #include <basicio.h>
 
 KBDEventQueue* KBDRoot = 0;
-KBDEventQueue* KBDNextEvent = 0;
+KBDEventQueue* volatile KBDNextEvent = 0;
 
 uint8_t kbdEventTrack = 0;
 

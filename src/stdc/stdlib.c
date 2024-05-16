@@ -56,7 +56,7 @@ void free(void* ptr){
 }
 
 char* itoa(int value, int base){
-	char* str;
+	char* str = 0;
 	char* st = malloc(64);
 
 	if (value == 0){
