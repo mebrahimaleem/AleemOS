@@ -17,6 +17,7 @@ int main(int argc, char** argv){
 	if (argc >= 2) curDir = argv[1];
 	
 	printf("root:%s$ ", curDir);
+
 	char c;
 	while (1){
 		scanf("%c", &c);

@@ -159,28 +159,53 @@ uint8_t killProcess(uint32_t PID) {
 		restartProcess(((KernelData* volatile)(uint32_t)k_KDATA)->systemTime.whole_ms);
 	}
 
-	processState** i;
-	// Killing other process
-	switch (_schedulerCurrentProcess->priority & 0x3) {
-		case 0: // low
-			i = &lowEnqueue;
-			break;
-		case 1: // normal
-			i = &normalEnqueue;
-			break;
-		case 2: // high
-			i = &highEnqueue;
-			break;
-		default: // blocking
-			i = &blockingEnqueue;
-			break;
-	}
-	
 	processState* p = 0, *t;
-	for (processState* j = *i; j != 0; j = j->next) {
+	for (processState* j = lowDequeue; j != 0; j = j->next) {
 		if (j->PID == PID) {
 			if (p == 0) { //first process in queue
-				*i = j->next;
+				lowDequeue = j->next;
+				return 0;
+			}
+			t = j->next;
+			free(j);
+			p->next = t;
+			return 0;
+		}
+		p = j;
+	}
+
+	for (processState* j = normalDequeue; j != 0; j = j->next) {
+		if (j->PID == PID) {
+			if (p == 0) { //first process in queue
+				normalDequeue = j->next;
+				return 0;
+			}
+			t = j->next;
+			free(j);
+			p->next = t;
+			return 0;
+		}
+		p = j;
+	}
+
+	for (processState* j = highDequeue; j != 0; j = j->next) {
+		if (j->PID == PID) {
+			if (p == 0) { //first process in queue
+				highDequeue = j->next;
+				return 0;
+			}
+			t = j->next;
+			free(j);
+			p->next = t;
+			return 0;
+		}
+		p = j;
+	}
+
+	for (processState* j = blockingDequeue; j != 0; j = j->next) {
+		if (j->PID == PID) {
+			if (p == 0) { //first process in queue
+				blockingDequeue = j->next;
 				return 0;
 			}
 			t = j->next;

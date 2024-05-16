@@ -12,16 +12,12 @@
 
 uint32_t last_exitcode = 0;
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
-
 //sysCall is meant for handling system calls from userland
 uint32_t sysCall(uint32_t call, uint32_t params){
 	uint32_t ret = 0;
 	switch (call){
-		case 0: //kill(exitcode)
-			last_exitcode = params;
-			killProcess(_schedulerCurrentProcess->PID);
+		case 0: //kill(PID)
+			ret = killProcess(params);
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
@@ -66,6 +62,9 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 			break;
 		case 7: //ls(path)
 			vgaprint(fat_ls((const char*)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params)), 0x0F);;
+			break;
+		case 8: //pid() - returns processes PID
+			ret = _schedulerCurrentProcess->PID;
 			break;
 		default:
 			break;
@@ -124,7 +123,6 @@ void processManager(uint32_t check){
 
 	return;
 }
-#pragma GCC pop_options
 
 inline uint32_t procHeapToKVaddr(uint32_t kHeapVaddr, uint32_t heapOffset) {
 	return kHeapVaddr + heapOffset;
