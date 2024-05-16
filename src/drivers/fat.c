@@ -13,7 +13,7 @@
 #define LOGICAL_TO_VIRTUAL(L) ((31 + L) * 512 + dataAreaBase)
 
 
-uint8_t* volatile dataAreaBase;
+uint8_t* dataAreaBase;
 FileEntry rd;
 
 //TODO: sync ram fs with disk fs
@@ -38,7 +38,7 @@ const char* fat_ls(const char* path) {
 
 uint32_t fat_init(uint32_t avAddr) {
 	mapMemory4M(kernelPD, FS_DATA_BASE, FS_DATA_BASE, 3);
-	dataAreaBase = (uint8_t* volatile)FS_DATA_BASE;
+	dataAreaBase = (uint8_t* )FS_DATA_BASE;
 	rd.name[0] = '/';
 	rd.name[1] =
 		rd.name[2] =
@@ -56,12 +56,12 @@ uint32_t fat_init(uint32_t avAddr) {
 	//copy fat
 	for (uint32_t i = 0; i < 9 * 512; i++) {
 		*(dataAreaBase + 1 * 512 + i) = //FAT1
-			*(dataAreaBase + 10 * 512 + i) = *(uint8_t* volatile)(0x7e00 + i); //FAT2
+			*(dataAreaBase + 10 * 512 + i) = *(uint8_t* )(0x7e00 + i); //FAT2
 	}
 
 	//copy root directory
 	for (uint32_t i = 0; i < 14 * 512; i++) {
-		*(dataAreaBase + 19 * 512 + i) = *(uint8_t* volatile)(0x9000 + i);
+		*(dataAreaBase + 19 * 512 + i) = *(uint8_t* )(0x9000 + i);
 	}
 
 	return avAddr;
@@ -100,7 +100,7 @@ FileList* _fat_iterFiles(FileEntry dir) {
 
 	uint32_t count = 2;
 
-	const FileEntry* files = (FileEntry* volatile)LOGICAL_TO_VIRTUAL(dir.cluster);
+	const FileEntry* files = (FileEntry* )LOGICAL_TO_VIRTUAL(dir.cluster);
 	const uint32_t dirLim = dir.size / 32;
 	for (uint32_t i = 0; i < dirLim; i++) {
 		if (files[i].name[0] == 0xe5) continue; //free

@@ -4,11 +4,11 @@
 
 #define PD_at(x) ((uint32_t**)((uint32_t)PD[PD_i] & 0xfffff000))
 
-uint8_t* volatile nextPagingBase;
+uint8_t* nextPagingBase;
 uint32_t*** kernelPD;
 
 void initPaging(){
-	nextPagingBase = (uint8_t* volatile)0x3ff000;
+	nextPagingBase = (uint8_t* )0x3ff000;
 	kernelPD = (uint32_t***)0xc000;
 }
 

@@ -7,17 +7,17 @@
 #include <utils.h>
 #include <ELFparse.h>
 
-inline uint8_t parseElf(uint8_t* volatile src, Elf32sheader** shead, Elf32pheader** phead, Elf32Half* snum, Elf32Half* pnum, uint8_t** strtbl, uint32_t* entry){
-	Elf32header* volatile ehead = (Elf32header*)src;
+inline uint8_t parseElf(uint8_t* src, Elf32sheader** shead, Elf32pheader** phead, Elf32Half* snum, Elf32Half* pnum, uint8_t** strtbl, uint32_t* entry){
+	Elf32header* ehead = (Elf32header*)src;
 
 	if (ehead->indent.fid[0] != 0x7f || ehead->indent.fid[1] != 'E' || ehead->indent.fid[2] != 'L' || ehead->indent.fid[3] != 'F' || 
 			ehead->indent.cls != 1 || ehead->indent.encd != 1 || ehead->indent.ver != 1 ||
 			ehead->type != 2 || ehead->machine != 3 || ehead->version != 1) return 1; //Bad ELF
 	
-	*shead = (Elf32sheader* volatile)(ehead->shoff + (uint32_t)src);
-	*phead = (Elf32pheader* volatile)(ehead->phoff + (uint32_t)src);
+	*shead = (Elf32sheader* )(ehead->shoff + (uint32_t)src);
+	*phead = (Elf32pheader* )(ehead->phoff + (uint32_t)src);
 
-	*strtbl = (uint8_t* volatile)(shead[0][ehead->shstrndx].offs + (uint32_t)src);
+	*strtbl = (uint8_t* )(shead[0][ehead->shstrndx].offs + (uint32_t)src);
 
 	*snum = ehead->shnum;
 	*pnum = ehead->phnum;
@@ -26,7 +26,7 @@ inline uint8_t parseElf(uint8_t* volatile src, Elf32sheader** shead, Elf32pheade
 	return 0;
 }
 
-uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* size){
+uint8_t calcELF(uint8_t* src, ElfPageList** pages, uint32_t* size){
 	Elf32sheader* shead;
 	Elf32pheader* phead;
 	uint8_t* strtbl;
@@ -63,7 +63,7 @@ uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* size){
 	return 0;
 }
 
-uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile ent){
+uint8_t copyELF(uint8_t* src, uint8_t* dst, uint32_t* ent){
 	Elf32sheader* shead;
 	Elf32pheader* phead;
 	uint8_t* strtbl;

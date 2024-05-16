@@ -7,8 +7,8 @@
 */
 typedef struct KBDEventQueue {
 	uint16_t keyCode; // System Internal Keycode
-	volatile struct KBDEventQueue* volatile next; // Pointer to next node  in queue
-	volatile struct KBDEventQueue* volatile prev; // Pointer to previous node in queue
+	struct KBDEventQueue* next; // Pointer to next node  in queue
+	struct KBDEventQueue* prev; // Pointer to previous node in queue
 } KBDEventQueue;
 
 /*
@@ -24,7 +24,7 @@ extern void KBDResetMods(void);
 		2) copy KBDNextEvent->keyCode;
 		3) set KBDNextEvent = KBDNextEvent->next
 */
-extern volatile KBDEventQueue* volatile KBDNextEvent;
+extern KBDEventQueue* KBDNextEvent;
 
 /*
 	Handler for PS/2 Keyboard IRQ

@@ -26,7 +26,7 @@ KERNEL_OBJ := $(patsubst src/kernel/%.c,build/%.elf,$(KERNEL_SRC))
 DRIVERS_OBJ := $(patsubst src/drivers/%.c,build/%.elf,$(DRIVERS_SRC))
 STDC_OBJ := $(patsubst src/stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
-CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c -g -F dwarf -I src/include/
+CFLAGS := $(CWARN) -masm=intel -O2 -m32 -fno-pie -ffreestanding -c -g -F dwarf -I src/include/
 
 .PHONY: all
 all: os dbl Makefile

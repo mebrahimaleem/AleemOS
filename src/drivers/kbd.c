@@ -8,8 +8,8 @@
 #include <memory.h>
 #include <basicio.h>
 
-volatile KBDEventQueue* volatile KBDRoot = 0;
-volatile KBDEventQueue* volatile KBDNextEvent = 0;
+KBDEventQueue* KBDRoot = 0;
+KBDEventQueue* KBDNextEvent = 0;
 
 uint8_t kbdEventTrack = 0;
 
@@ -86,7 +86,7 @@ void ISR21_handler(uint32_t byte){
 		KBDNextEvent = KBDRoot;
 	}
 	else{
-		volatile KBDEventQueue* volatile tmp = KBDRoot;
+		KBDEventQueue* tmp = KBDRoot;
 		KBDRoot->prev = (KBDEventQueue*)malloc(sizeof(KBDEventQueue));
 		KBDRoot = KBDRoot->prev;
 		KBDRoot->next = tmp;

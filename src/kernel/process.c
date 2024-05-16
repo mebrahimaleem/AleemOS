@@ -35,7 +35,7 @@ void killProcess(){
 	unscheduleCurrentProcess();
 }
 
-processSetup setupProcess(uint8_t* volatile src, uint8_t priority, uint32_t argc, uint8_t** argv){
+processSetup setupProcess(uint8_t* src, uint8_t priority, uint32_t argc, uint8_t** argv){
 	processSetup* ret = (processSetup*)malloc(sizeof(processSetup));
 	ret->res = 255;
 	
@@ -57,7 +57,7 @@ processSetup setupProcess(uint8_t* volatile src, uint8_t priority, uint32_t argc
 		return *ret;
 	}
 
-	uint32_t* volatile UPD = allocPagingStruct();
+	uint32_t* UPD = allocPagingStruct();
 	uint32_t UHS = 0;
 
 	for (ElfPageList* p = pages; p != 0; p = p->next) {
@@ -74,7 +74,7 @@ processSetup setupProcess(uint8_t* volatile src, uint8_t priority, uint32_t argc
 
 	// pass argv via heap
 	if (argc != 0) {
-		*(uint32_t* volatile)(nextProcessVaddr + UHS) = 0;
+		*(uint32_t* )(nextProcessVaddr + UHS) = 0;
 		const char** argv_b = (const char**)_malloc(argc * sizeof(char*), (BlockDescriptor*)(nextProcessVaddr + UHS));
 		
 		uint32_t nextStr = 0xff800000 + + UHS + 4 + argc * sizeof(char*);
