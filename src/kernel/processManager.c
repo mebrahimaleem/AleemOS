@@ -21,7 +21,7 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 	switch (call){
 		case 0: //kill(exitcode)
 			last_exitcode = params;
-			killProcess();
+			killProcess(_schedulerCurrentProcess->PID);
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
@@ -82,7 +82,7 @@ void processManager(uint32_t check){
 		vgaprint("An exception has occured! Error code: ", 0x40);
 		vgaprintint(check - 0x20, 16, 0x40);
 		vgaprint("\n", 0x40);
-		killProcess();
+		killProcess(_schedulerCurrentProcess->PID);
 	}
 
 	//Check for IRQ1

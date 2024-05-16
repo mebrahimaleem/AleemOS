@@ -14,7 +14,6 @@
 #include <memory.h>
 #include <utils.h>
 #include <paging.h>
-#include <signals.h>
 #include <process.h>
 #include <processScheduler.h>
 #include <pci.h>
@@ -68,9 +67,6 @@ void boot2(void){
 	resetProcessDivs();
 	initScheduler();
 	schedulerStatus = 0;
-
-	//Setup signals
-	initSignals();
 
 	//Setup PCI
 	pciEntries = getPCIDevices();
@@ -196,7 +192,7 @@ void transferFromBoot2() {
 
 	asm volatile ("sti" : : : "memory");
 	
-	killProcess();
+	killProcess(_schedulerCurrentProcess->PID);
 
 	hang();
 }

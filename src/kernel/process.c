@@ -9,7 +9,6 @@
 #include <basicio.h>
 #include <paging.h>
 #include <ELFparse.h>
-#include <signals.h>
 #include <process.h>
 #include <taskSwitch.h>
 #include <processScheduler.h>
@@ -29,11 +28,6 @@ void startProcess(processState* state){
 	taskSwitch((uint32_t)state);
 }
 #pragma GCC pop_options
-
-//Kills the current process
-void killProcess(){
-	unscheduleCurrentProcess();
-}
 
 processSetup setupProcess(uint8_t* src, uint8_t priority, uint32_t argc, uint8_t** argv){
 	processSetup* ret = (processSetup*)malloc(sizeof(processSetup));
@@ -113,7 +107,6 @@ processSetup setupProcess(uint8_t* src, uint8_t priority, uint32_t argc, uint8_t
 
 	ret->state.argc = argc;
 
-	addProcess(ret->state.PID);
 	ret->res = 0;
 	return *ret;
 }

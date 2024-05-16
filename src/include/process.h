@@ -41,11 +41,6 @@ typedef struct processSetup {
 extern void startProcess(processState* state);
 
 /*
-	Kills the current running process
-*/
-extern void killProcess(void);
-
-/*
 	Creates paging structures for the process
 	src: Pointer to executable
 

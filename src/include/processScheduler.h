@@ -2,11 +2,13 @@ extern void ISR20_handler(uint32_t opt0);
 
 extern void scheduleProcess(processState* state);
 
-extern void unscheduleCurrentProcess(void);
-
 extern void initScheduler(void);
 
 extern void farSchedulerEntry(uint32_t frame);
+
+extern void restartProcess(uint32_t curTime);
+
+extern uint8_t killProcess(uint32_t PID);
 
 extern void _schedulerSchedule(uint32_t frame);
 
