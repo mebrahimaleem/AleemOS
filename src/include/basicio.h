@@ -14,14 +14,14 @@ extern void clearVGA(void);
 	y: y position on the scrren
 	color: The color of the character in VGA text mode color format
 */
-extern void put(volatile const char str, volatile uint8_t x, volatile uint8_t y, volatile uint8_t color);
+extern void put(const char str, uint8_t x, uint8_t y, uint8_t color);
 
 /*
 	Prints a string
 	str: The string the print
 	col: THe color of the string in VGA text mode color format
 */
-extern void vgaprint(volatile char* volatile str, volatile uint8_t col);
+extern void vgaprint(const char* str, uint8_t col);
 
 /*
 	Prints an unsigned integer
@@ -41,7 +41,7 @@ extern void vgaprintchar(uint8_t c, uint8_t col);
 /*
 	The current address in memory to draw the next character
 */
-extern volatile uint8_t* volatile vgacursor;
+extern uint8_t* volatile vgacursor;
 
 /*
 	The lowest character index to which text can be deleted to (using the \b escape character)

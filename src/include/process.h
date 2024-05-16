@@ -51,7 +51,7 @@ extern void killProcess(void);
 
 	Unlike the similar function in kernel/ELFParse.h, this function actually modifies the paging tables
 */
-extern processSetup setupProcess(uint8_t* volatile src, uint8_t priority, uint32_t argc, uint8_t** argv);
+extern processSetup setupProcess(uint8_t* src, uint8_t priority, uint32_t argc, uint8_t** argv);
 
 /*
 	Resets current running processes memory and paging structure

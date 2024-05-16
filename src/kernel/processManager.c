@@ -24,7 +24,7 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
-			params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+			params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 			backslock = (uint32_t)vgacursor;
 			goto blink;
 		blink:
@@ -42,7 +42,7 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 					KBDNextEvent = KBDNextEvent->next;
 					if (ret != 0){
 						vgaprintchar((uint8_t)ret, 0x0F);
-						params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+						params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 						setKBDEventTrack(0);
 						goto blink;
 					}
@@ -52,14 +52,14 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 			}
 			break;
 		case 4: //getcursorpos()
-			ret = (uint32_t)(vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
+			ret = (uint32_t)(vgacursor - (uint8_t* )0xb8000)/2;
 			break;
 		case 5: //lockcursor()
 			backslock = (uint32_t)vgacursor;
 			break;
 		case 6: //printstring(heapOffset)
-			vgaprint((volatile char* volatile)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params), 0x0F);
-			params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+			vgaprint((const char*)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params), 0x0F);
+			params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 			backslock = (uint32_t)vgacursor;
 			goto blink;
 			break;
@@ -75,9 +75,9 @@ void processManager(uint32_t check){
 	//Check for kill process
 	if ((check & 0x20) == 0x20){
 		last_exitcode = check;
-		vgaprint((volatile char* volatile)"An exception has occured! Error code: ", 0x40);
+		vgaprint("An exception has occured! Error code: ", 0x40);
 		vgaprintint(check - 0x20, 16, 0x40);
-		vgaprint((volatile char* volatile)"\n", 0x40);
+		vgaprint("\n", 0x40);
 		killProcess();
 	}
 
