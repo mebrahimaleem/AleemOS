@@ -19,12 +19,12 @@ extern void initHeap(void);
 
 	Returns: Pointer to allocated memory
 */
-extern void* malloc(volatile uint32_t size);
+extern void* malloc(uint32_t size);
 
-extern void* _malloc(volatile uint32_t size, BlockDescriptor* block);
+extern void* _malloc(uint32_t size, BlockDescriptor* block);
 
 /*
 	Frees allocated memory
 	block: Pointer to allocated memory
 */
-extern void free(volatile void* volatile block);
+extern void free(void* block);

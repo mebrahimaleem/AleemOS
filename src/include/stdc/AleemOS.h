@@ -6,6 +6,7 @@
 
 int blink(int x, int y);
 int cursorPos(void);
+void _ls(const char* path);
 
 extern uint32_t _syscall(uint32_t call, uint32_t params);
 #endif

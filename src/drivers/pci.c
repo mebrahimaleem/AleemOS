@@ -95,21 +95,21 @@ PCIEntry* getPCIDevices() {
 				}
 				
 				if (func == 0 || last->type != UNKOWN) {
-					vgaprint((volatile char* volatile)"Found PCI Device. Bus: 0x", 0x0A);
+					vgaprint("Found PCI Device. Bus: 0x", 0x0A);
 					vgaprintint((uint8_t)bus, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Device: 0x", 0x0A);
+					vgaprint(" Device: 0x", 0x0A);
 					vgaprintint(dev, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Func: 0x", 0x0A);
+					vgaprint(" Func: 0x", 0x0A);
 					vgaprintint(func, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Type: ", 0x0A);
+					vgaprint(" Type: ", 0x0A);
 					vgaprintint(last->type, 16, 0x0A);
 
 					if (last->irqLine != 0) {
-						vgaprint((volatile char* volatile)" IRQ: 0x", 0x0A);
+						vgaprint(" IRQ: 0x", 0x0A);
 						vgaprintint((last->irqLine & 0xFF) + 0x20, 16, 0x0A);
 					}
 
-					vgaprint((volatile char* volatile)"\n", 0x0A);
+					vgaprint("\n", 0x0A);
 			}
 				if (((_pciReadDWord((uint8_t)bus, dev, 0, 0xC) >> 16) & 0x80) != 0x80) break;
 			}

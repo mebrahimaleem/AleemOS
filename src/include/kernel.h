@@ -5,36 +5,37 @@
 //#define KERNEL_DEBUG
 
 #define DRIVER_VADDR_BASE 0xff400000
-#define PROCESS_VADDR_BASE 0x00400000
+#define PROCESS_VADDR_BASE 0x00800000
+#define FS_DATA_BASE 0x00400000
 
-extern volatile uint16_t k_KDATA;
+extern uint16_t k_KDATA;
 
 /*
 	Strucutre to store information on used memory (from the BIOS)
 */
 typedef struct MemoryMapEntry {
-	volatile uint64_t base; // Start of memory
-	volatile uint64_t size; // Size of memory
-	volatile uint32_t type; // Memory type (see BIOS docs or implementation)
+	uint64_t base; // Start of memory
+	uint64_t size; // Size of memory
+	uint32_t type; // Memory type (see BIOS docs or implementation)
 } MemoryMapEntry;
 
 /*
 	Structure to store information on time since some point during boot
 */
 typedef struct SystemTime {
-	volatile uint32_t fraction_ms; // Fractional milliseconds
-	volatile uint32_t whole_ms; // Whole milliseconds
-	volatile uint32_t fraction_diff; // Fractional diff (used by PIT IRQ)
-	volatile uint32_t whole_diff; // Whole diff (used by PIT IRQ)
+	uint32_t volatile fraction_ms; // Fractional milliseconds
+	uint32_t volatile whole_ms; // Whole milliseconds
+	uint32_t volatile fraction_diff; // Fractional diff (used by PIT IRQ)
+	uint32_t volatile whole_diff; // Whole diff (used by PIT IRQ)
 } SystemTime;
 
 /*
 	Strucuture to hold information when transferring from assembly to C
 */
 typedef struct KernelData {
-	volatile uint32_t MBR_SIG; // MBR timestamp signature (for finding boot device)
-	volatile MemoryMapEntry mmape[16]; // Memory map
-	volatile SystemTime systemTime; // System time
+	uint32_t MBR_SIG; // MBR timestamp signature (for finding boot device)
+	MemoryMapEntry mmape[16]; // Memory map
+	SystemTime systemTime; // System time
 } KernelData;
 
 /*
@@ -167,11 +168,11 @@ typedef struct TSS {
 /*
 	Kernel Data
 */
-extern volatile KernelData* volatile kdata;
-extern volatile TSS* volatile kTSS;
+extern KernelData* kdata;
+extern TSS* kTSS;
 
 /*
 	GDT
 */
-extern DTentry* volatile GDT;
+extern DTentry* GDT;
 extern struct PCIEntry* pciEntries;

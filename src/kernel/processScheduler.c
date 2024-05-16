@@ -30,7 +30,7 @@ uint32_t schedulerTimestamp;
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 void ISR20_handler(uint32_t opt0) { //from kernel space
-	kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
+	kdata = (KernelData* volatile)(uint32_t)k_KDATA; //Get kernel data
 	kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
 	kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
 
@@ -40,7 +40,7 @@ void ISR20_handler(uint32_t opt0) { //from kernel space
 }
 
 void farSchedulerEntry(uint32_t frame) { //ISR20 from userland (far call)
-	kdata = (volatile KernelData* volatile)(volatile uint32_t)k_KDATA; //Get kernel data
+	kdata = (KernelData* volatile)(uint32_t)k_KDATA; //Get kernel data
 	kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
 	kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
 
@@ -53,27 +53,27 @@ void farSchedulerEntry(uint32_t frame) { //ISR20 from userland (far call)
 void _schedulerSchedule(uint32_t frame) {
 	if (schedulerStatus == 0xff) return;
 	
-	uint32_t curTime = ((volatile KernelData* volatile)(volatile uint32_t)k_KDATA)->systemTime.whole_ms;
+	uint32_t curTime = ((KernelData* volatile)(uint32_t)k_KDATA)->systemTime.whole_ms;
 	if ((curTime >= schedulerTimestamp) || (processCF & 1) == 1) {
 		if ((processCF & 1) == 0){
-			_schedulerCurrentProcess->cr3 = *(uint32_t* volatile)(frame);
-			_schedulerCurrentProcess->edi = *(uint32_t* volatile)(frame+4);
-			_schedulerCurrentProcess->esi = *(uint32_t* volatile)(frame+8);
-			_schedulerCurrentProcess->ebp = *(uint32_t* volatile)(frame+12);
-			_schedulerCurrentProcess->esp = *(uint32_t* volatile)(frame+16);
-			_schedulerCurrentProcess->ebx = *(uint32_t* volatile)(frame+20);
-			_schedulerCurrentProcess->edx = *(uint32_t* volatile)(frame+24);
-			_schedulerCurrentProcess->ecx = *(uint32_t* volatile)(frame+28);
-			_schedulerCurrentProcess->eax = *(uint32_t* volatile)(frame+32);
-			_schedulerCurrentProcess->eip = *(uint32_t* volatile)(frame+36);
+			_schedulerCurrentProcess->cr3 = *(uint32_t* )(frame);
+			_schedulerCurrentProcess->edi = *(uint32_t* )(frame+4);
+			_schedulerCurrentProcess->esi = *(uint32_t* )(frame+8);
+			_schedulerCurrentProcess->ebp = *(uint32_t* )(frame+12);
+			_schedulerCurrentProcess->esp = *(uint32_t* )(frame+16);
+			_schedulerCurrentProcess->ebx = *(uint32_t* )(frame+20);
+			_schedulerCurrentProcess->edx = *(uint32_t* )(frame+24);
+			_schedulerCurrentProcess->ecx = *(uint32_t* )(frame+28);
+			_schedulerCurrentProcess->eax = *(uint32_t* )(frame+32);
+			_schedulerCurrentProcess->eip = *(uint32_t* )(frame+36);
 			//skip cs
-			_schedulerCurrentProcess->eflags = *(uint32_t* volatile)(frame+44);
+			_schedulerCurrentProcess->eflags = *(uint32_t* )(frame+44);
 
 			scheduleProcess(_schedulerCurrentProcess);
 		}
 		else if (blockingDequeue == 0 && lowDequeue == 0 && normalDequeue == 0 && highDequeue == 0) { //No processess remain scheduled
 			// Halt operating system
-			vgaprint((volatile char* volatile)"All processess have exited! System halt.", 0x04);
+			vgaprint("All processess have exited! System halt.", 0x04);
 			while(1) asm volatile ("cli \n hlt" : : : "memory");
 		}
 
@@ -162,7 +162,7 @@ void unscheduleCurrentProcess() {
 
 void initScheduler(void) {
 	blockingEnqueue = blockingDequeue = highEnqueue = highDequeue = normalEnqueue = normalDequeue = lowEnqueue = lowDequeue = 0;
-	_schedulerCurrentProcess = (processState* volatile)malloc(sizeof(processState));
+	_schedulerCurrentProcess = (processState* )malloc(sizeof(processState));
 	_schedulerCurrentProcess->PID = 0;
 	_schedulerCurrentProcess->priority = 2;
 	
