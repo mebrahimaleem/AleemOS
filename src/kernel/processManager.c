@@ -6,6 +6,7 @@
 #include <kernel.h>
 #include <process.h>
 #include <kbd.h>
+#include <fat.h>
 #include <boot2.h>
 #include <processScheduler.h>
 
@@ -62,6 +63,9 @@ uint32_t sysCall(uint32_t call, uint32_t params){
 			params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 			backslock = (uint32_t)vgacursor;
 			goto blink;
+			break;
+		case 7: //ls(path)
+			vgaprint(fat_ls((const char*)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params)), 0x0F);;
 			break;
 		default:
 			break;

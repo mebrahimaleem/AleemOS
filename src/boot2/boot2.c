@@ -118,7 +118,6 @@ void boot2(void){
 
 	// init fs
 	nextDriverVaddr = fat_init(nextDriverVaddr);
-	vgaprint(fat_ls("/"), 0x0F);
 	
 	//Install User Data and Code Segments
 	//GDT

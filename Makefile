@@ -37,62 +37,62 @@ os: build/os.img Makefile
 
 .PHONY: dbl
 dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld
-	@$(LD) $(LDDFLAGS)
+	$(LD) $(LDDFLAGS)
 
 build/os.img: build/MBR.bin build/FS.img Makefile
-	@cat build/MBR.bin build/FS.img > build/os.img
-	@truncate -s 1440000 build/os.img
+	cat build/MBR.bin build/FS.img > build/os.img
+	truncate -s 1440000 build/os.img
 
 build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
-	@cat build/VBR.bin > build/FS.img
-	@truncate -s 1440000 build/FS.img
-	@losetup -o 0 /dev/loop15 build/FS.img
-	@mount /dev/loop15 mnt
-	@cp build/boot.bin mnt/BOOT.BIN
-	@cp build/kernel.bin mnt/KERNEL.BIN
-	@cp build/sh.elf mnt/SH.ELF
-	@cp LICENSE mnt/LICENSE
-	@fatattr +rhs mnt/BOOT.BIN
-	@fatattr +rhs mnt/KERNEL.BIN
-	@fatattr -rhs mnt/SH.ELF
-	@fatattr +r -hs mnt/LICENSE
-	@umount mnt
-	@dd if=/dev/loop15 seek=512 of=build/FS.img
-	@losetup -d /dev/loop15
+	cat build/VBR.bin > build/FS.img
+	truncate -s 1440000 build/FS.img
+	losetup -o 0 /dev/loop15 build/FS.img
+	mount /dev/loop15 mnt
+	cp build/boot.bin mnt/BOOT.BIN
+	cp build/kernel.bin mnt/KERNEL.BIN
+	cp build/sh.elf mnt/SH.ELF
+	cp LICENSE mnt/LICENSE
+	fatattr +rhs mnt/BOOT.BIN
+	fatattr +rhs mnt/KERNEL.BIN
+	fatattr -rhs mnt/SH.ELF
+	fatattr +r -hs mnt/LICENSE
+	umount mnt
+	dd if=/dev/loop15 seek=512 of=build/FS.img
+	losetup -d /dev/loop15
 
 $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
-	@$(B_NASM) -o $@ $<
+	$(B_NASM) -o $@ $<
 
 build/kernel.bin: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
-	@$(LD) $(LDFLAGS)
+	$(LD) $(LDFLAGS)
 
 build/boot2e.elf: src/boot2/boot2e.asm Makefile
-	@$(E_NASM) -o $@ $<
+	$(E_NASM) -o $@ $<
 
 build/boot2.elf: src/boot2/boot2.c $(INCLUDE) link.ld Makefile
-	@$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 build/taskSwitch.elf: src/kernel/taskSwitch.asm $(INCLUDE) link.ld Makefile
-	@$(E_NASM) -o $@ $<
+	$(E_NASM) -o $@ $<
 
 $(KERNEL_OBJ): build/%.elf: src/kernel/%.c src/include/%.h Makefile
-	@$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 $(DRIVERS_OBJ): build/%.elf: src/drivers/%.c src/include/%.h Makefile
-	@$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 build/sh.elf : src/defapp/* build/stdc.elf userlandl.ld Makefile
-	@$(CC) $(CFLAGS) -I src/include/stdc/ -I src/include/defapp/ src/defapp/sh.c -o build/sh.o -g
-	@ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o -s
+	$(CC) $(CFLAGS) -I src/include/stdc/ -I src/include/defapp/ src/defapp/sh.c -o build/sh.o -g
+	ld -melf_i386 -T userlandl.ld -o build/sh.elf build/sh.o -s
 
 build/shd.elf : src/defapp/* build/stdc.elf userlandl.ld Makefile
-	@ld -melf_i386 -T userlandl.ld -o build/shd.elf build/sh.o
+	ld -melf_i386 -T userlandl.ld -o build/shd.elf build/sh.o
 
 build/stdc.elf : build/stdc/crt0.o $(STDC_OBJ) stdcl.ld Makefile
-	@ld -r -melf_i386 -T stdcl.ld
+	ld -r -melf_i386 -T stdcl.ld
 
 build/stdc/crt0.o : src/stdc/crt0.asm Makefile
-	@$(E_NASM) -o $@ $<
+	$(E_NASM) -o $@ $<
 
 $(STDC_OBJ) : build/stdc/%.o: src/stdc/%.c src/include/stdc/%.h Makefile
-	@$(CC) $(CFLAGS) -I src/include/stdc/ $< -o $@
+	$(CC) $(CFLAGS) -I src/include/stdc/ $< -o $@
