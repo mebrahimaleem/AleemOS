@@ -4,8 +4,6 @@ extern void scheduleProcess(processState* state);
 
 extern void initScheduler(void);
 
-extern void farSchedulerEntry(uint32_t frame);
-
 extern void restartProcess(uint32_t curTime);
 
 extern uint8_t killProcess(uint32_t PID);

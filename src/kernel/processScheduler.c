@@ -26,8 +26,6 @@ processState* _schedulerCurrentProcess;
 uint8_t schedulerStatus;
 uint32_t schedulerTimestamp;
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
 void ISR20_handler(uint32_t opt0) { //from kernel space
 	kdata = (KernelData* volatile)(uint32_t)k_KDATA; //Get kernel data
 	kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
@@ -37,17 +35,6 @@ void ISR20_handler(uint32_t opt0) { //from kernel space
 
 	return;
 }
-
-void farSchedulerEntry(uint32_t frame) { //ISR20 from userland (far call)
-	kdata = (KernelData* volatile)(uint32_t)k_KDATA; //Get kernel data
-	kdata->systemTime.fraction_ms += kdata->systemTime.fraction_diff;
-	kdata->systemTime.whole_ms += kdata->systemTime.whole_diff;
-
-	_schedulerSchedule(frame);
-
-	return;
-}
-#pragma GCC pop_options
 
 void _schedulerSchedule(uint32_t frame) {
 	if (schedulerStatus == 0xff) return;

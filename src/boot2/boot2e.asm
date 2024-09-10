@@ -664,9 +664,8 @@ ltr ax
 pop ax
 ret
 
-[extern farSchedulerEntry]
 farSchedulerEntry_asm:
 push ebp
-call farSchedulerEntry
+call ISR20_handler
 add esp, 4
 retf
