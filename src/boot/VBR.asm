@@ -14,193 +14,105 @@ MBR_ERR equ 0x600 + 226 ; This is the memory location of the MBR print error and
 ;BPB
 jmp short copyboot
 nop
-OEM db "ALEEMOS " ;See the FAT12 filesystem documentation for more information on this datastructure
+OEM db "MSWIN4.1"
 SECTOR_BYTES dw 512
-CLUSTER_SECTORS db 1
-RESERVED_SECTORS dw 1
+CLUSTER_SECTORS db 8
+RESERVED_SECTORS dw 48
 FATS db 2
-ROOT_ENTRIES dw 224 ;14 sectors
-SECTORS dw 0x0b3a
-MEDIA_BYTE db 0xF0
-FAT_SECTORS dw 9
-TRACK_SECTORS dw 18
-HEADS dw 2
+ROOT_ENTRIES dw 0
+SECTORS dw 0
+MEDIA_BYTE db 0xF8
+FAT_SECTORS dw 0
+TRACK_SECTORS dw 0x3f
+HEADS dw 0x20
 HIDDEN_SECTORS dd 1
-LARGE_SECTOR dd 0
+LARGE_SECTOR dd 0x103FF8
 
 ;Extended Boot Record
-DRIVE_NO db 0 
-NT_FLAGS db 0
-SIGNATURE db 41
-VOLUME_ID dd 16
-VOLUME_LABEL db "ALEEMOS    "
-FS_ID db "FAT12   "
+FAT_SZ dd 0x410
+EXT_FLD dw 0
+FS_VER dw 0
+FS_ROOT dd 2
+FS_INFO dw 1
+VB_COP dw 6
+RES0 times 12 db 0
+DRIVE_NO db 0x80
+RES1 db 0
+EXT_SIG db 0x29
+EXT_VID dd 0x1234e
+EXT_VLB db "NO NAME    "
+EXT_TP db "FAT32   "
 
 copyboot:
-
-;BIOS is supposed to set BPB, but some (from previous experiences) don't
 mov BYTE [DRIVE_NO], dl
 mov WORD [PARTION_OFFSET], si
 mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
-;First we copy FAT1 onto the RAM, we don't need FAT2 since it is rarely used for disk recovery
+BOOT_SRC equ 10 ;LBA Sector
+BOOT_END equ 36
+BOOT_DST equ 0xAC00
 
-copyFAT:
-	mov bx, 2 ;1 hidden sector + 1 reserved sector = 2
-	.loop:
-		mov ax, 512 ;First calculate where to copy sector
-		mul bx
-		add ax, 0x7A00
-		mov cx, ax ;
-		pusha
-		call MBR_READ_SECTOR ;Copy to 0x7A00 + 512 * LBA sector on disk
-		popa
-		inc bx ;Read next sector
-		cmp bx, 11 ;Check if last sector
-		jne .loop
+MIN_END equ 49
+MIN_DST equ 0xE000
 
-;Now we copy the Root Directory from the floppy to RAM
-copyRootDir:
-	mov bx, 20 ;hidden sector + VBR + FAT1 + FAT2 = 20
-	.loop:
-		mov ax, 512 ;Calculate where to copy sector
-		mul bx
-		add ax, 0x6800
-		mov cx, ax
-		pusha
-		call MBR_READ_SECTOR ;Similar logic to before, copy to 0x6800 + 512 * LBA sector on disk
-		popa
-		inc bx ;Next sector
-		cmp bx, 34 ;Check if last sector
-		jne .loop
+xor bx, bx
+mov es, bx
 
-;Some useful constants
-FAT1 equ 0x7E00 ;Start of the filesystem on RAM
-ROOT_DIR equ 0x9000 ;Start of the RootDirectory on RAM
-FSDATA equ 0x20 ;NOTE: not the start of the data area (in sectors), this is set such that cluster 2 is the start of the data area (since 0 and 1 are reserved)
+mov bx, BOOT_SRC
+mov cx, BOOT_DST
 
-mov si, BOOT_FNAME ;The file to copy
-mov ecx, 0xAC00 ;Where to copy start of boot
-call findBoot
+.loop0:
+push bx
+push cx
+call MBR_READ_SECTOR
+pop cx
+pop bx
+
+add bx, 1
+add cx, 512
+cmp bx, BOOT_END
+jne .loop0
+
+mov cx, MIN_DST
+
+.loop1:
+push bx
+push cx
+call MBR_READ_SECTOR
+pop cx
+pop bx
+
+add bx, 1
+add cx, 512
+jnc .noinc
+mov cx, es
+add cx, 1
+mov es, cx
+xor cx, cx
+.noinc:
+cmp bx, MIN_END
+jne .loop1
 
 mov dl, BYTE [DRIVE_NO] ;Pass important drive parameters to the remainaing bootloader
 mov si, WORD [PARTION_OFFSET]
 mov bx, WORD [TRACK_SECTORS]
 mov cx, WORD [HEADS]
-jmp 0xAC00 ;Address of the bootloader
-
-FILE_NOT_FOUND db "FATAL: FILE NOT FOUND - Get new copy of OS", 0
-
-times 0x100-($-$$) nop ;Pad out so that we know the exact memory location of this function (so that it can later be used)
-;We will now search the root directory for a file called BOOT with extension BIN
-findBoot: ;Find the file pointed by si and copy it to cx
-	push cx
-	push si
-	mov ax, ROOT_DIR ;Algorithm: check everyroot directory until we find a valid file
-	.loop:
-		mov di, ax
-		pop si
-		push si
-		mov cx, 11
-		rep cmpsb
-		je readBoot
-		add ax, 32 ;Go to next entry
-		cmp ax, ROOT_DIR + (32 * 224)
-		mov si, FILE_NOT_FOUND
-		je MBR_ERR
-		jmp .loop
-jmp $
-readBoot:
-	pop si
-	add ax, 26 ;Point to starting cluster
-	mov bx, ax
-	mov bx, word [bx] ;Get starting cluster
-	mov dx, bx
-	pop cx
-	call readCluster ;Read cluster bx
-	
-	call findCluster ;Get the next cluster
-	.loop:
-		cmp bx, 0x0FFF ;Check if last cluster
-		je bootjmp ;If so, go to boot
-		
-		push dx
-		mov dx, 512
-		cmp cx, 0xFDFF
-		jb .nocarry
-		mov dx, es
-		add dx, 0x1000
-		mov es, dx
-		sub cx, 0xFDFF
-		xor dx, dx
-		.nocarry:
-		add cx, 512 ;Copy to next cluster
-		cmp dx, 0
-		jne .sks
-		sub cx, 513
-		.sks:
-		pop dx
-
-		mov dx, bx
-		call readCluster ;Read the next cluster
-		
-		call findCluster ;Get the next cluster
-		jmp .loop
-
-bootjmp:
-	ret
-				
-readCluster: ;Copies cluster bx to address es:cx
-	add bx, FSDATA ;Add data area offset
-	pusha 
-	call MBR_READ_SECTOR ;Read cluster
-	popa
-	ret
-
-findCluster: ;Gets a cluster from index dx and returns in bx
-	mov bx, dx ;save dx
-	and bx, 1
-	push bx ;If odd, bx is 1
-	
-	;Multiply dx by 1.5 (floored) and put it in ax
-	mov bx, 3
-	mov ax, dx
-	mul bx
-	xor dx, dx
-	mov bx, 2
-	div bx
-		
-	;Add FAT offset to ax
-	add ax, FAT1
-	pop bx
-	cmp bx, 1
-	je .odd ;If odd, we handle this differently
-
-	;Even
-	;This is is the simple situation, all we need is the first 1.5 bytes of the word pointed by ax
-	mov bx, ax
-	mov dx, [bx]
-	and dx, 0x0FFF ;Mask out high 4 bits (since they belong to another entry)
-	mov bx, dx
-	ret
-
-	.odd:
-	;This is more complex, we need to add the values pointed by ax and ax+1 while masking out adjacent bytes (since we only want 1.5 bytes)
-	mov bx, ax
-	mov ax, [bx] ;First 2 thirds of entry
-	mov dx, [bx+1] ;Other third of entry
-	shl dx, 4 ;Mask out the other entries
-	shr ax, 4
-	and dx, 0x0F00
-	and ax, 0x00FF
-	or dx, ax ;Combine the entry
-	mov bx, dx
-	ret
+jmp BOOT_DST ;Address of the bootloader
 
 PARTION_OFFSET dw 0
 
-BOOT_FNAME db "BOOT    BIN" ;This is the name of the file we are searching for
-
 times 510-($-$$) nop ;Pad out remaining sector
+dw 0xaa55
+
+; FSINFO strucuture 
+FSI_LeadSig dd 0x41615252
+Res0 times 480 db 0
+FSI_StrucSi dd 0x61417272
+FSI_FreeCou dd 0xFFFFFFFF
+FSI_NxtFree dd 0xFFFFFFFF
+Res1 times 12 db 0
+FSI_TrailSi dd 0xAA550000
+
+times 1534-($-$$) nop 
 dw 0xaa55

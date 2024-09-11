@@ -11,6 +11,7 @@ E_NASM := nasm -f elf
 LD := ld
 LDFLAGS := -melf_i386 -T link.ld -s
 LDDFLAGS := -melf_i386 -T linkd.ld
+LDMFLAGS := -melf_i386 -T linkm.ld -s
 
 BOOT_RECORDS := build/MBR.bin build/VBR.bin
 
@@ -28,6 +29,8 @@ STDC_OBJ := $(patsubst src/stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
 CFLAGS := $(CWARN) -masm=intel -O2 -m32 -fno-pie -ffreestanding -c -g -F dwarf -I src/include/
 
+LOOPBACK := $(shell losetup -f)
+
 .PHONY: all
 all: os dbl Makefile
 
@@ -39,26 +42,29 @@ os: build/os.img Makefile
 dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld
 	$(LD) $(LDDFLAGS)
 
-build/os.img: build/MBR.bin build/FS.img Makefile
-	cat build/MBR.bin build/FS.img > build/os.img
-	truncate -s 1440000 build/os.img
+build/FS.img: build/VBR.bin build/FAT.bin Makefile
+	dd if=/dev/zero of=$@ bs=512 count=1064958
+	dd conv=notrunc if=build/MBR.bin of=$@ bs=512 seek=0 count=1
+	dd conv=notrunc if=build/VBR.bin of=$@ bs=512 seek=1 count=3
+	dd conv=notrunc if=build/VBR.bin of=$@ bs=512 seek=7 count=3
+	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=25088 count=12
+	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=557568 count=12
 
-build/FS.img: build/VBR.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
-	cat build/VBR.bin > build/FS.img
-	truncate -s 1440000 build/FS.img
-	losetup -o 0 /dev/loop15 build/FS.img
-	mount /dev/loop15 mnt
-	cp build/boot.bin mnt/BOOT.BIN
+build/os.img: build/FS.img build/MBR.bin build/min.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
+	cp $< $@
+	losetup -o 512 $(LOOPBACK) build/os.img
+	mount -t vfat $(LOOPBACK) mnt
+	dd conv=notrunc if=build/boot.bin of=$@ bs=512 seek=10 count=28
+	dd conv=notrunc if=build/min.bin of=$@ bs=512 seek=36 count=21
 	cp build/kernel.bin mnt/KERNEL.BIN
 	cp build/sh.elf mnt/SH.ELF
 	cp LICENSE mnt/LICENSE
-	fatattr +rhs mnt/BOOT.BIN
 	fatattr +rhs mnt/KERNEL.BIN
 	fatattr -rhs mnt/SH.ELF
 	fatattr +r -hs mnt/LICENSE
 	umount mnt
-	dd if=/dev/loop15 seek=512 of=build/FS.img
-	losetup -d /dev/loop15
+	dd if=$(LOOPBACK) of=$@ bs=4M seek=512
+	losetup -d $(LOOPBACK)
 
 $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 	$(B_NASM) -o $@ $<
@@ -66,8 +72,17 @@ $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 build/kernel.bin: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	$(LD) $(LDFLAGS)
 
+build/min.bin: build/mine.elf build/min.elf
+	$(LD) $(LDMFLAGS)
+
 build/boot2e.elf: src/boot2/boot2e.asm Makefile
 	$(E_NASM) -o $@ $<
+
+build/mine.elf: src/boot2/mine.asm Makefile
+	$(E_NASM) -o $@ $<
+
+build/min.elf: src/boot2/min.c src/include/min.h linkm.ld Makefile
+	$(CC) $(CFLAGS) $< -o $@
 
 build/boot2.elf: src/boot2/boot2.c $(INCLUDE) link.ld Makefile
 	$(CC) $(CFLAGS) $< -o $@

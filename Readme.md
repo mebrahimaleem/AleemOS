@@ -1,7 +1,7 @@
 # AleemOS
 
 This is a simple in-progress operating system.
-The future objective for this operating system is for it to be able to read and execute an ELF files from a FAT12 filesystem.
+The future objective for this operating system is for it to be able to read and execute an ELF files from a FAT32 filesystem.
 
 For more information, check out this repository's [wiki page](https://github.com/mebrahimaleem/AleemOS/wiki).
 

@@ -4,8 +4,6 @@
 
 [ORG 0xAC00]
 
-VBR_READ_FILE equ 0x7d00 ;This is the memory location of the VBR readBoot routine, params: bx: where to copy file, si: pointer to name of file
-
 ;We have not switched to 32-bit mode yet
 [BITS 16]
 
@@ -43,20 +41,6 @@ mov ah, 1
 mov ch, 0
 mov cl, 15
 int 0x10
-
-;Now we need to copy the kernel onto the RAM
-mov si, KERNEL_FNAME ;file to copy
-mov cx, 0xE000 ;Where to copy kernel
-call VBR_READ_FILE
-xor dx, dx
-mov es, dx
-
-;Copy the default application (sh.elf) onto the RAM
-mov si, DEFAPP_FNAME
-mov cx, 0x0800
-call VBR_READ_FILE
-xor dx, dx
-mov es, dx
 
 ;Now we need the memory map
 get_mmap:
@@ -148,6 +132,22 @@ mov ss, ax
 mov es, ax
 mov fs, ax
 mov gs, ax
+
+;Switch to unreal mode to copy FAT to FS_DATA_BASE
+and al, 0xFE
+mov cr0, eax
+jmp 0x0:enter_unreal
+
+enter_unreal:
+sti
+
+cli
+mov eax, cr0
+or al, 1
+mov cr0, eax
+jmp 0x8:return_pm
+
+return_pm:
 
 ;Set the stack
 mov ebp, 0x9fa00
@@ -330,7 +330,7 @@ out 0x40, al ;Set the reload value
 mov al, ah
 out 0x40, al
 
-; Jump to boot2e
+; Jump to mine
 
 mov eax, 0x0
 mov ecx, [KHEADS]
@@ -391,9 +391,6 @@ DRIVE_NO db 0 ;Our boot drive number
 PARTION_OFFSET dw 0 ;Offset of active partion in the partion table
 TRACK_SECTORS dw 0 ;Number of sectors per track
 HEADS dw 0 ;Number of heads
-
-KERNEL_FNAME db "KERNEL  BIN"
-DEFAPP_FNAME db "SH      ELF"
 
 ;NOTE: 	The remaining code defines the various system datastructures that are used in protected mode. Most OS implementations do this in the kernel, but in order
 				;to call the kernel in protected mode, we will declare these in the bootloader and the kernel can access them later (using sgdt sidt, Etc.)
@@ -888,7 +885,7 @@ GDT_ptr: ;This is the descriptor for the GDT
 CODE_SEG equ GDT_code - GDT_start
 DATA_SEG equ GDT_data - GDT_start
 
-times 0x1400-($-$$) - 8 * 6 db 0;We need to be 4KiB aligned
+times 0x1400-($-$$) - 8 * 6 db 0
 
 GDT_start:
 	GDT_null: ;NULL descriptor
@@ -912,6 +909,8 @@ GDT_start:
 	dq 0 ; TSS
 	GDT_end:
 
+times 0x1400-($-$$) db 0
+
 ;Page directory
 PAGE_DIRECTORY:
 times 1024 dd 2 ;Create non present pages
@@ -923,5 +922,3 @@ PAGE_TABLE_1:
 	dd ((i * 0x1000) | 3) + 0x0000
 %assign i i+1
 %endrep
-
-;No need to pad out file since this file is stored in the filesystem

@@ -50,7 +50,6 @@ mov BYTE [BOOT_DRIVE], dl ;Store boot drove
 ;Read VBR from partition
 mov ebx, DWORD [bx] ;Get LBA of partition
 
-;Get drive parameters in case OS was copied to another medium (non 1.44M floppy)
 push bx
 
 mov ah, 8
@@ -163,7 +162,7 @@ ret
 
 times 434-($-$$) nop
 
-UID_1 dq 0x345 ;Unique disk ID (NOTE: We can't know for sure what the other disk IDs are at compile time so our best bet is to set this to some random number)
+UID_1 dq 0x345
 UID_2 dd 0xf0
 
 
@@ -173,12 +172,12 @@ db 0x80 ;Set to bootable
 db 0x00 ;Starting head
 db 0x02 ;Starting sector (and upper two bits for cylinder)
 db 0x00 ;Starting cylinder
-db 0x01 ;System ID
-db 0x01 ;Ending head
-db 0x11 ;Ending sector (and upper two bits for cylinder)
-db 0x50 ;Ending cylinder
+db 0x0c ;System ID
+db 0x03 ;Ending head
+db 0xd0 ;Ending track (and upper two bits for cylinder)
+db 0xff ;Ending cylinder
 dd 0x01 ;Partion starting LBA
-dd 0x0b3e ;Number of sectors
+dd 0x103FFE ;Number of sectors
 
 ;Second Entry
 dq 0 ;Unused partition
