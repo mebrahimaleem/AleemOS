@@ -12,6 +12,7 @@ LD := ld
 LDFLAGS := -melf_i386 -T link.ld -s
 LDDFLAGS := -melf_i386 -T linkd.ld
 LDMFLAGS := -melf_i386 -T linkm.ld -s
+LMDFLAGS := -melf_i386 -T linkmd.ld
 
 BOOT_RECORDS := build/MBR.bin build/VBR.bin
 
@@ -27,9 +28,9 @@ KERNEL_OBJ := $(patsubst src/kernel/%.c,build/%.elf,$(KERNEL_SRC))
 DRIVERS_OBJ := $(patsubst src/drivers/%.c,build/%.elf,$(DRIVERS_SRC))
 STDC_OBJ := $(patsubst src/stdc/%.c,build/stdc/%.o,$(STDC_SRC))
 
-CFLAGS := $(CWARN) -masm=intel -O2 -m32 -fno-pie -ffreestanding -c -g -F dwarf -I src/include/
+CFLAGS := $(CWARN) -masm=intel -O0 -m32 -fno-pie -ffreestanding -c -g -F dwarf -I src/include/
 
-LOOPBACK := $(shell losetup -f)
+LOOPBACK := $(shell sudo losetup -f)
 
 .PHONY: all
 all: os dbl Makefile
@@ -39,32 +40,33 @@ os: build/os.img Makefile
 	@echo "Done Building OS!"
 
 .PHONY: dbl
-dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld
+dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld linkmd.ld
 	$(LD) $(LDDFLAGS)
+	$(LD) $(LMDFLAGS)
 
-build/FS.img: build/VBR.bin build/FAT.bin Makefile
+build/FS.img: build/MBR.bin build/VBR.bin build/FAT.bin Makefile
 	dd if=/dev/zero of=$@ bs=512 count=1064958
 	dd conv=notrunc if=build/MBR.bin of=$@ bs=512 seek=0 count=1
 	dd conv=notrunc if=build/VBR.bin of=$@ bs=512 seek=1 count=3
 	dd conv=notrunc if=build/VBR.bin of=$@ bs=512 seek=7 count=3
-	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=25088 count=12
-	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=557568 count=12
+	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=16896 count=12
+	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=549376 count=12
 
-build/os.img: build/FS.img build/MBR.bin build/min.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
+build/os.img: build/FS.img build/min.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
 	cp $< $@
-	losetup -o 512 $(LOOPBACK) build/os.img
-	mount -t vfat $(LOOPBACK) mnt
-	dd conv=notrunc if=build/boot.bin of=$@ bs=512 seek=10 count=28
-	dd conv=notrunc if=build/min.bin of=$@ bs=512 seek=36 count=21
+	sudo losetup -o 512 $(LOOPBACK) build/os.img
+	sudo mount -t vfat -o umask=000 $(LOOPBACK) mnt
+	dd conv=notrunc if=build/boot.bin of=$@ bs=512 seek=10 count=18
+	dd conv=notrunc if=build/min.bin of=$@ bs=512 seek=30 count=3
 	cp build/kernel.bin mnt/KERNEL.BIN
 	cp build/sh.elf mnt/SH.ELF
 	cp LICENSE mnt/LICENSE
-	fatattr +rhs mnt/KERNEL.BIN
-	fatattr -rhs mnt/SH.ELF
-	fatattr +r -hs mnt/LICENSE
-	umount mnt
-	dd if=$(LOOPBACK) of=$@ bs=4M seek=512
-	losetup -d $(LOOPBACK)
+	sudo fatattr +rhs mnt/KERNEL.BIN
+	sudo fatattr +r -hs mnt/SH.ELF
+	sudo fatattr +r -hs mnt/LICENSE
+	sudo umount mnt
+	sudo dd if=$(LOOPBACK) of=$@ bs=4M seek=512
+	sudo losetup -d $(LOOPBACK)
 
 $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 	$(B_NASM) -o $@ $<
@@ -72,7 +74,7 @@ $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 build/kernel.bin: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	$(LD) $(LDFLAGS)
 
-build/min.bin: build/mine.elf build/min.elf
+build/min.bin: build/mine.elf build/min.elf build/fat.elf
 	$(LD) $(LDMFLAGS)
 
 build/boot2e.elf: src/boot2/boot2e.asm Makefile

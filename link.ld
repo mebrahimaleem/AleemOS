@@ -26,7 +26,7 @@ INPUT
 OUTPUT(build/kernel.bin)
 
 SECTIONS {
-	. = 0xE000;
+	. = 0xD600;
 	.text : {
 		*(.text)
 		*(.rodata)

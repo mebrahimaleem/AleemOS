@@ -1,4 +1,10 @@
 [global _start]
 _start:
 
-jmp $
+pusha
+
+[extern min]
+call min
+
+popa
+jmp 0xD600

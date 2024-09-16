@@ -7,6 +7,8 @@
 ;We have not switched to 32-bit mode yet
 [BITS 16]
 
+MBR_READ_SECTOR equ 0x72C ;This is the memory location of the MBR readsector routine, params: bx: LBA of sector to read, es:cx: where to write sector
+
 ;Save drive parameters, boot drive, and partion offset
 mov BYTE [DRIVE_NO], dl
 mov WORD [PARTION_OFFSET], si
@@ -30,6 +32,8 @@ call real_print
 .hang: jmp .hang
 pci_err_msg: db "FATAL: Failed to verify PCI mechanism #1 exists. System Hang.", 0
 
+loading_msg db "Loading... Please Wait", 0
+
 pci_ok:
 
 ;Set the VGA video mode
@@ -41,6 +45,9 @@ mov ah, 1
 mov ch, 0
 mov cl, 15
 int 0x10
+
+mov si, loading_msg
+call real_print
 
 ;Now we need the memory map
 get_mmap:
@@ -91,8 +98,23 @@ xor dh, dh
 mov dl, [DRIVE_NO]
 mov bx, 0x600
 mov ah, 3
+clc
 int 0x13
 
+; Enable A20
+; TODO: try other A20 enable methods as well
+in al, 0x92
+test al, 0x2
+jnz .enabled
+and al, 0xFE
+out 0x92, al
+.enabled:
+
+xor ax, ax
+mov ds, ax
+mov es, ax
+push es
+push ds
 ;Now we need to enter PM
 cli ;We will disable interupts until the kernel has correctly set up the IDT
 lgdt [GDT_ptr] ;Load the GDT descriptor
@@ -100,6 +122,7 @@ lgdt [GDT_ptr] ;Load the GDT descriptor
 mov eax, cr0 ;Set the PM bit
 or eax, 0x01
 mov cr0, eax
+jmp enter_pm
 jmp CODE_SEG:enter_pm ;Far jump to 32-bit (to set CS)
 
 ;Kernel Data structure
@@ -122,32 +145,106 @@ PIT_WHLMS dd 0
 ;Keyboard queue pointer
 KEYBOARD_QUEUE dd 0
 
-;We are now in 32-bit mode (but we stil need to set the segments registers)
+T_BUF equ 0x800
+
+; Disk Address Packet
+I13_SIZE db 0x10
+I13_RES0 db 0
+I13_TRN dw 0
+I13_BUF dd T_BUF
+I13_BLN dq 0
+
+disk_err_msg: db " FATAL: Failed to read disk. System Hang.", 0
+disk_fail:
+mov si, disk_err_msg
+add ah, '0'
+mov BYTE [si], ah
+call pm_print
+.hang jmp .hang
+
+copy: ;edi destination, bx sector on disk, cx number of sectors
+mov WORD [I13_TRN], 1
+
+.loop:
+mov dl, BYTE [DRIVE_NO]
+mov si, I13_SIZE
+mov ah, 0x42
+mov DWORD [I13_BLN], ebx
+
+clc
+int 0x13
+
+cmp ah, 0
+jne disk_fail
+
+mov esi, T_BUF
+mov dx, 0x80
+.copy0:
+mov eax, DWORD [esi]
+mov DWORD [gs:edi], eax
+dec dx
+add esi, 4
+add edi, 4
+cmp dx, 0
+jne .copy0
+
+inc ebx
+dec ecx
+cmp ecx, 0
+jne .loop
+
+ret
+
 [BITS 32]
 enter_pm:
-;Set the segment registers
+mov ax, DATA_SEG
+mov gs, ax
+
+mov eax, cr0
+and al, 0xFE
+mov cr0, eax
+
+jmp 0x0:enter_unreal
+
+[BITS 16]
+enter_unreal:
+pop ds
+pop es
+sti
+
+; Copy FAT
+mov ecx, 0x410
+mov ebx, 33
+mov edi, 0x400000
+call copy
+
+; Copy Data
+mov ecx, 0x103FDD
+mov ebx, 2113
+mov edi, 0x482000
+call copy
+
+; Copy Minimal
+mov ecx, 3
+mov ebx, 30
+mov edi, 0xD000
+call copy
+
+cli
+mov eax, cr0 ;Set the PM bit
+or al, 0x01
+mov cr0, eax
+jmp CODE_SEG:renter_pm
+
+[BITS 32]
+renter_pm:
+;Set the segment registers (again)
 mov ax, DATA_SEG
 mov ds, ax
 mov ss, ax
 mov es, ax
 mov fs, ax
 mov gs, ax
-
-;Switch to unreal mode to copy FAT to FS_DATA_BASE
-and al, 0xFE
-mov cr0, eax
-jmp 0x0:enter_unreal
-
-enter_unreal:
-sti
-
-cli
-mov eax, cr0
-or al, 1
-mov cr0, eax
-jmp 0x8:return_pm
-
-return_pm:
 
 ;Set the stack
 mov ebp, 0x9fa00
@@ -272,12 +369,11 @@ mov gs, ax
 
 sti
 
-;Now we need to setup and enable paging
-mov eax, PAGE_TABLE_1
-or eax, 3
-mov [PAGE_DIRECTORY], eax
+;Enable paging
+mov eax, cr4
+or al, 0x10
+mov cr4, eax
 
-;Set control register
 mov eax, PAGE_DIRECTORY
 mov cr3, eax
 
@@ -341,7 +437,7 @@ mov edi, KERNEL_DATA
 mov ebp, 0x9fa00
 mov esp, ebp
 
-jmp 0xe000
+jmp 0xd000
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -904,8 +1000,8 @@ GDT_start:
 		db 10010010b
 		db 11001111b
 		db 0x00
-	dq 0 ; User code (set by boot2)
-	dq 0 ; User data (set by boot2)
+	dq 0
+	dq 0
 	dq 0 ; TSS
 	GDT_end:
 
@@ -913,12 +1009,14 @@ times 0x1400-($-$$) db 0
 
 ;Page directory
 PAGE_DIRECTORY:
-times 1024 dd 2 ;Create non present pages
-
-;Page table 1
-PAGE_TABLE_1:
 %assign i 0
-%rep 1024
-	dd ((i * 0x1000) | 3) + 0x0000
+%rep 526
+	dd ((i << 22) | 0x83)
 %assign i i+1
 %endrep
+
+times 497 dd 2
+
+dd (0x00000000 | 0x83)
+
+times 0x2400-($-$$) db 0

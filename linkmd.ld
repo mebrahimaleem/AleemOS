@@ -1,6 +1,6 @@
 ENTRY(_start)
 
-OUTPUT_FORMAT(binary)
+OUTPUT_FORMAT(elf32-i386)
 
 STARTUP(build/mine.elf)
 
@@ -9,7 +9,7 @@ INPUT
 	build/min.elf
 )
 
-OUTPUT(build/min.bin)
+OUTPUT(build/mind.elf)
 
 SECTIONS {
 	. = 0xD000;

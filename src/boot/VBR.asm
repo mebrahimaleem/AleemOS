@@ -17,7 +17,7 @@ nop
 OEM db "MSWIN4.1"
 SECTOR_BYTES dw 512
 CLUSTER_SECTORS db 8
-RESERVED_SECTORS dw 48
+RESERVED_SECTORS dw 32
 FATS db 2
 ROOT_ENTRIES dw 0
 SECTORS dw 0
@@ -50,11 +50,8 @@ mov WORD [TRACK_SECTORS], bx
 mov WORD [HEADS], cx
 
 BOOT_SRC equ 10 ;LBA Sector
-BOOT_END equ 36
+BOOT_END equ 30
 BOOT_DST equ 0xAC00
-
-MIN_END equ 49
-MIN_DST equ 0xE000
 
 xor bx, bx
 mov es, bx
@@ -73,26 +70,6 @@ add bx, 1
 add cx, 512
 cmp bx, BOOT_END
 jne .loop0
-
-mov cx, MIN_DST
-
-.loop1:
-push bx
-push cx
-call MBR_READ_SECTOR
-pop cx
-pop bx
-
-add bx, 1
-add cx, 512
-jnc .noinc
-mov cx, es
-add cx, 1
-mov es, cx
-xor cx, cx
-.noinc:
-cmp bx, MIN_END
-jne .loop1
 
 mov dl, BYTE [DRIVE_NO] ;Pass important drive parameters to the remainaing bootloader
 mov si, WORD [PARTION_OFFSET]

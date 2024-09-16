@@ -26,7 +26,7 @@ INPUT
 OUTPUT(build/kerneld.elf)
 
 SECTIONS {
-	. = 0xE000;
+	. = 0xD600;
 	.text : {
 		*(.text)
 		*(.rodata)

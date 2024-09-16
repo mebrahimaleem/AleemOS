@@ -55,6 +55,7 @@ push bx
 mov ah, 8
 xor di, di
 mov dl, [BOOT_DRIVE]
+clc
 int 0x13
 mov si, DISK_ERR ;If we can't get drive parameters then fatal error
 jc err ;Fatal error on fail
@@ -64,8 +65,9 @@ movzx dx, dh
 add dx, 1
 mov [HEADS], dx ;Store heads
 
+xor ebx, ebx
 pop bx ;LBA to read
-mov cx, 0x7c00 ;Destination
+mov ecx, 0x7c00 ;Destination
 xor dx, dx
 mov es, dx
 call read_sector
@@ -85,14 +87,6 @@ mov cx, [HEADS]
 
 ;Jump to VBR
 jmp 0x7c00
-
-check_err: ;Check if we should try reading the disk again
-dec di
-cmp di, 0
-mov si, DISK_ERR
-je err
-jmp no_err
-
 
 DISK_ERR db "FATAL: DISK FAIL - Please Restart Your Device", 0
 times 218-($-$$) nop
@@ -123,42 +117,36 @@ BAD_DISK_ERR db "FATAL: BAD DISK - Get new copy of OS", 0
 
 times 300-($-$$) nop
 
-read_sector: ;Reads the LBA sector stored in bx and copies it to es:cx
+read_sector: ;Reads the LBA sector stored in ebx and copies it to es:cx
+mov dl, BYTE [BOOT_DRIVE]
+mov si, SIZE
+mov ah, 0x42
+mov DWORD [BUF], ecx
+mov DWORD [BLN], ebx
+
+clc
+int 0x13
+
+cmp ah, 0
+jne derr
+
+ret
+
+derr:
+mov si, DISK_ERR
+jmp err
+
+
+; Disk Address Packet
+SIZE db 0x10
+RES0 db 0
+TRN dw 1
+BUF dd 0
+BLN dq 0
+
 push di
 mov di, 3
 
-no_err:
-push cx
-
-;Calculate LBA to CHS
-mov ax, bx
-
-xor dx, dx
-div word [TRACK_SECTORS]
-add dx, 1
-mov cl, dl
-
-xor dx, dx 
-div word [HEADS]
-mov dh, dl
-mov ch, al
-
-;Read the disk using int 0x13
-mov al, 1
-mov dl, BYTE [BOOT_DRIVE]
-pop bx
-mov ah, 0x02
-
-int 0x13
-
-;Fatal error on fail
-jc check_err
-
-cmp al, 1
-jne check_err
-
-pop di
-ret
 
 times 434-($-$$) nop
 

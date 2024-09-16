@@ -60,8 +60,7 @@ void boot2(void){
 	//Setup keyboard
 	KBDResetMods();
 
-	initPaging(); // Setup advanced paging
-	mapMemory4M(kernelPD, 0xffc00000, 0x00000000, 3); // high kernel memory
+	initPaging(); // Setup advanced paging utilities
 
 	// Start process scheduling
 	resetProcessDivs();
@@ -101,7 +100,7 @@ void boot2(void){
 	procArgv[0] = argv0;
 	procArgv[1] = argv1;
 
-	processSetup defAppSetup = setupProcess((uint8_t*)0x800, 1, 2, (uint8_t**)procArgv);
+	processSetup defAppSetup = setupProcess((uint8_t*)0x1000, 1, 2, (uint8_t**)procArgv); //min.c has already loaded defapp from fs
 
 	if (defAppSetup.res != 0){
 		vgaprint("ERROR [", 0x0F);
