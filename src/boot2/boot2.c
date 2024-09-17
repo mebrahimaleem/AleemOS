@@ -19,7 +19,6 @@
 #include <pci.h>
 #include <xhci.h>
 #include <kbd.h>
-#include <fat.h>
 #include <ELFparse.h>
 
 uint8_t k_DRIVE_NO;
@@ -100,7 +99,7 @@ void boot2(void){
 	procArgv[0] = argv0;
 	procArgv[1] = argv1;
 
-	processSetup defAppSetup = setupProcess((uint8_t*)0x1000, 1, 2, (uint8_t**)procArgv); //min.c has already loaded defapp from fs
+	processSetup defAppSetup = setupProcess((uint8_t*)0x1800, 1, 2, (uint8_t**)procArgv); //min.c has already loaded defapp from fs
 
 	if (defAppSetup.res != 0){
 		vgaprint("ERROR [", 0x0F);
@@ -110,10 +109,6 @@ void boot2(void){
 		hang();
 	}
 
-
-	// init fs
-	nextDriverVaddr = fat_init(nextDriverVaddr);
-	
 	//Install User Data and Code Segments
 	//GDT
 	//User Code

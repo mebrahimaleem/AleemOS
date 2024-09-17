@@ -11,8 +11,6 @@ E_NASM := nasm -f elf
 LD := ld
 LDFLAGS := -melf_i386 -T link.ld -s
 LDDFLAGS := -melf_i386 -T linkd.ld
-LDMFLAGS := -melf_i386 -T linkm.ld -s
-LMDFLAGS := -melf_i386 -T linkmd.ld
 
 BOOT_RECORDS := build/MBR.bin build/VBR.bin
 
@@ -40,9 +38,8 @@ os: build/os.img Makefile
 	@echo "Done Building OS!"
 
 .PHONY: dbl
-dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld linkmd.ld
+dbl: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) build/shd.elf Makefile linkd.ld
 	$(LD) $(LDDFLAGS)
-	$(LD) $(LMDFLAGS)
 
 build/FS.img: build/MBR.bin build/VBR.bin build/FAT.bin Makefile
 	dd if=/dev/zero of=$@ bs=512 count=1064958
@@ -52,12 +49,11 @@ build/FS.img: build/MBR.bin build/VBR.bin build/FAT.bin Makefile
 	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=16896 count=12
 	dd conv=notrunc if=build/FAT.bin of=$@ bs=1 seek=549376 count=12
 
-build/os.img: build/FS.img build/min.bin build/boot.bin build/kernel.bin build/sh.elf Makefile
+build/os.img: build/FS.img build/boot.bin build/kernel.bin build/sh.elf Makefile
 	cp $< $@
 	sudo losetup -o 512 $(LOOPBACK) build/os.img
 	sudo mount -t vfat -o umask=000 $(LOOPBACK) mnt
-	dd conv=notrunc if=build/boot.bin of=$@ bs=512 seek=10 count=18
-	dd conv=notrunc if=build/min.bin of=$@ bs=512 seek=30 count=3
+	dd conv=notrunc if=build/boot.bin of=$@ bs=512 seek=10 count=23
 	cp build/kernel.bin mnt/KERNEL.BIN
 	cp build/sh.elf mnt/SH.ELF
 	cp LICENSE mnt/LICENSE
@@ -74,17 +70,8 @@ $(FLAT_BIN): build/%.bin: src/boot/%.asm Makefile
 build/kernel.bin: build/boot2e.elf build/boot2.elf build/taskSwitch.elf $(KERNEL_OBJ) $(DRIVERS_OBJ) Makefile link.ld
 	$(LD) $(LDFLAGS)
 
-build/min.bin: build/mine.elf build/min.elf build/fat.elf
-	$(LD) $(LDMFLAGS)
-
 build/boot2e.elf: src/boot2/boot2e.asm Makefile
 	$(E_NASM) -o $@ $<
-
-build/mine.elf: src/boot2/mine.asm Makefile
-	$(E_NASM) -o $@ $<
-
-build/min.elf: src/boot2/min.c src/include/min.h linkm.ld Makefile
-	$(CC) $(CFLAGS) $< -o $@
 
 build/boot2.elf: src/boot2/boot2.c $(INCLUDE) link.ld Makefile
 	$(CC) $(CFLAGS) $< -o $@

@@ -154,6 +154,8 @@ I13_TRN dw 0
 I13_BUF dd T_BUF
 I13_BLN dq 0
 
+CLS_SZ equ 8
+
 disk_err_msg: db " FATAL: Failed to read disk. System Hang.", 0
 disk_fail:
 mov si, disk_err_msg
@@ -162,8 +164,8 @@ mov BYTE [si], ah
 call pm_print
 .hang jmp .hang
 
-copy: ;edi destination, bx sector on disk, cx number of sectors
-mov WORD [I13_TRN], 1
+copy: ;edi destination, ebx sector on disk, ecx number of sectors (must be multiple of 8)
+mov WORD [I13_TRN], CLS_SZ
 
 .loop:
 mov dl, BYTE [DRIVE_NO]
@@ -178,7 +180,7 @@ cmp ah, 0
 jne disk_fail
 
 mov esi, T_BUF
-mov dx, 0x80
+mov dx, 0x400
 .copy0:
 mov eax, DWORD [esi]
 mov DWORD [gs:edi], eax
@@ -188,12 +190,111 @@ add edi, 4
 cmp dx, 0
 jne .copy0
 
-inc ebx
-dec ecx
+add ebx, CLS_SZ
+sub ecx, CLS_SZ
 cmp ecx, 0
 jne .loop
 
 ret
+
+BPB equ 0x7c00
+FAT equ 0x400000
+CSV equ 0x1000
+
+ROOT equ 2113
+
+T_DI dd 0
+
+copy_file: ;edi destination, si file name
+mov edx, DWORD [BPB + 44] ; cluster index
+sub edx, 2
+
+mov DWORD [T_DI], edi
+
+push edx ; fat offset
+push si
+
+call .calc_fat
+
+mov ecx, CLS_SZ
+mov edi, T_BUF
+call copy
+
+pop si
+pop edx
+
+mov bx, T_BUF
+
+.find_file:
+push si
+mov di, bx
+mov cx, 11
+repe cmpsb
+pop si
+test cx, cx
+jz .read_file
+
+add bx, 32
+cmp bx, CSV+T_BUF
+jne .find_file
+add edx, 2
+shl edx, 2 ; * 4
+mov edx, DWORD [edx+FAT]
+sub edx, 2
+jmp .find_file
+; TODO: implement end of file error
+
+push edx ; fat offset
+push si
+
+call .calc_fat
+
+mov ecx, 4
+mov edi, T_BUF
+call copy
+
+pop si
+pop edx
+
+mov bx, T_BUF
+jmp .find_file
+
+.calc_fat:
+mov eax, CSV/0x200
+mul edx
+mov ebx, eax
+add ebx, ROOT
+ret
+
+.read_file:
+movzx edx, WORD [bx+20]
+shl edx, 16
+mov dx, WORD [bx+26]
+sub edx, 2
+
+.file_loop:
+push edx
+call .calc_fat
+
+mov ecx, CLS_SZ
+mov edi, DWORD [T_DI]
+call copy
+
+pop edx
+add edx, 2
+shl edx, 2 ; * 4
+mov edx, DWORD [edx+FAT]
+
+mov eax, DWORD [T_DI]
+add eax, CSV
+mov DWORD [T_DI], eax
+
+sub edx, 2
+cmp edx, 0x0fffffff-2
+jne .file_loop
+
+ret
+
 
 [BITS 32]
 enter_pm:
@@ -218,23 +319,27 @@ mov ebx, 33
 mov edi, 0x400000
 call copy
 
-; Copy Data
-mov ecx, 0x103FDD
-mov ebx, 2113
-mov edi, 0x482000
-call copy
+; Copy kernel
+mov edi, KERNEL_ADDR
+mov esi, KERNEL_NAME
+call copy_file
 
-; Copy Minimal
-mov ecx, 3
-mov ebx, 30
-mov edi, 0xD000
-call copy
+; Copy defapp
+mov edi, SH_ADDR
+mov esi, SH_NAME
+call copy_file
 
 cli
 mov eax, cr0 ;Set the PM bit
 or al, 0x01
 mov cr0, eax
 jmp CODE_SEG:renter_pm
+
+KERNEL_NAME db "KERNEL  BIN"
+SH_NAME db "SH      ELF"
+
+KERNEL_ADDR equ 0xD000
+SH_ADDR equ 0x1800
 
 [BITS 32]
 renter_pm:
@@ -425,8 +530,6 @@ pop eax
 out 0x40, al ;Set the reload value
 mov al, ah
 out 0x40, al
-
-; Jump to mine
 
 mov eax, 0x0
 mov ecx, [KHEADS]
