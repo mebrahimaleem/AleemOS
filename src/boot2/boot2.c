@@ -102,9 +102,9 @@ void boot2(void){
 	processSetup defAppSetup = setupProcess((uint8_t*)0x1800, 1, 2, (uint8_t**)procArgv); //min.c has already loaded defapp from fs
 
 	if (defAppSetup.res != 0){
-		vgaprint("ERROR [", 0x0F);
-		vgaprintint(defAppSetup.res, 10, 0x0F);
-		vgaprint("] : Bad Executable", 0x0F);
+		vgaprint("ERROR [", 0x04);
+		vgaprintint(defAppSetup.res, 10, 0x04);
+		vgaprint("] : Bad Executable", 0x04);
 
 		hang();
 	}

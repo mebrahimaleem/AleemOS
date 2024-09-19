@@ -1113,12 +1113,12 @@ times 0x1400-($-$$) db 0
 ;Page directory
 PAGE_DIRECTORY:
 %assign i 0
-%rep 526
+%rep 2
 	dd ((i << 22) | 0x83)
 %assign i i+1
 %endrep
 
-times 497 dd 2
+times 1021 dd 2
 
 dd (0x00000000 | 0x83)
 
