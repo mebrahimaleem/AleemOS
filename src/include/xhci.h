@@ -22,7 +22,7 @@ typedef struct {
 	uint32_t type : 6;
 	uint32_t VFID : 8;
 	uint32_t slot : 8;
-} CmdCmplTRB;
+} __attribute((packed)) CmdCmplTRB;
 
 typedef struct {
 	uint32_t res0;
@@ -37,7 +37,7 @@ typedef struct {
 	uint32_t res4 : 4;
 	uint32_t type : 6;
 	uint32_t res5: 16;
-} NoOpTRB;
+} __attribute((packed)) NoOpTRB;
 
 typedef struct {
 	uint32_t ptrlo;
@@ -52,7 +52,7 @@ typedef struct {
 	uint32_t res2 : 4;
 	uint32_t type : 6;
 	uint32_t res3 : 16;
-} LinkTRB;
+} __attribute((packed)) LinkTRB;
 
 typedef struct {
 	uint32_t addrlo;
@@ -62,12 +62,17 @@ typedef struct {
 	uint32_t res1;
 } __attribute((packed)) ERSTE;
 
+typedef struct {
+	uint32_t addrlo;
+	uint32_t addrhi;
+} __attribute((packed)) DCBAAE;
+
 typedef struct XHCIHostData {
 	uint8_t* volatile vMMIO;
 	uint8_t CAPLENGTH;
 	uint32_t RTSOFF;
 	uint32_t DBOFF;
-	uint8_t MaxSlots;
+	uint8_t maxSlots;
 	uint32_t DCBAAP;
 	ERSTE* volatile ERST;
 	TRB* volatile commandRing;
@@ -75,6 +80,8 @@ typedef struct XHCIHostData {
 	TRB* volatile eventDequeue0;
 	uint8_t CPCS;
 	uint8_t ECCS0;
+	uint16_t maxScrBufs;
+	uint32_t PAGESIZE;
 	struct XHCIHostData* next;
 } XHCIHostData;
 
@@ -84,9 +91,11 @@ typedef struct TRBChain {
 	struct TRBChain* p;
 } TRBChain;
 
-//TODO: make ERST struct
-
 extern void initXHCIDriver(void);
 extern uint64_t _xhciGetMMIO(PCIEntry ent);
 extern uint32_t setupXHCIDevice(PCIEntry ent, uint32_t avAddr);
 extern TRBChain* _xhciHandleEventRing(uint32_t i, XHCIHostData xhciD);
+extern void enumerateAllXHCI(void);
+extern void _xhciEnumerate(XHCIHostData xhciD);
+extern uint32_t _xhciResetHost(PCIEntry ent, XHCIHostData xhciD, uint32_t avAddr);
+extern void _xhciISR(PCIEntry* ent, uint32_t opt0);

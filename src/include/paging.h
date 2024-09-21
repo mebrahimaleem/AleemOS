@@ -1,3 +1,4 @@
+#define PAGING_KO 3 //kernel only
 
 extern uint32_t*** kernelPD;
 
