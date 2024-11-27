@@ -2,7 +2,7 @@
 //
 //provides declarations for shared kernel data structures and functions
 
-#define KERNEL_DEBUG
+//#define KERNEL_DEBUG
 
 #define DRIVER_VADDR_BASE 0x01000000
 #define PROCESS_VADDR_BASE 0x00800000
