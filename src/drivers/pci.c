@@ -48,6 +48,7 @@ PCIEntry* getPCIDevices() {
 				last->irqLine = _pciReadDWord((uint8_t)bus, dev, (uint8_t)func, 0x3C) & 0xFF; //Always works regarldess of header type
 				last->func = (uint8_t)func; //TODO: Later implement for adding other functions to the PCI device list
 				last->next = 0;
+				last->handler = 0;
 		
 				uint32_t classCode = _pciReadDWord((uint8_t)bus, dev, (uint8_t)func, 8) >> 8;
 				switch (classCode) {
@@ -95,21 +96,21 @@ PCIEntry* getPCIDevices() {
 				}
 				
 				if (func == 0 || last->type != UNKOWN) {
-					vgaprint((volatile char* volatile)"Found PCI Device. Bus: 0x", 0x0A);
+					vgaprint("Found PCI Device. Bus: 0x", 0x0A);
 					vgaprintint((uint8_t)bus, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Device: 0x", 0x0A);
+					vgaprint(" Device: 0x", 0x0A);
 					vgaprintint(dev, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Func: 0x", 0x0A);
+					vgaprint(" Func: 0x", 0x0A);
 					vgaprintint(func, 16, 0x0A);
-					vgaprint((volatile char* volatile)" Type: ", 0x0A);
+					vgaprint(" Type: ", 0x0A);
 					vgaprintint(last->type, 16, 0x0A);
 
 					if (last->irqLine != 0) {
-						vgaprint((volatile char* volatile)" IRQ: 0x", 0x0A);
+						vgaprint(" IRQ: 0x", 0x0A);
 						vgaprintint((last->irqLine & 0xFF) + 0x20, 16, 0x0A);
 					}
 
-					vgaprint((volatile char* volatile)"\n", 0x0A);
+					vgaprint("\n", 0x0A);
 			}
 				if (((_pciReadDWord((uint8_t)bus, dev, 0, 0xC) >> 16) & 0x80) != 0x80) break;
 			}
@@ -117,12 +118,21 @@ PCIEntry* getPCIDevices() {
 	return devs;
 }
 
+uint8_t findCapability(PCIEntry ent, uint8_t id) {
+	if ((_pciReadDWord(ent.bus, ent.dev, ent.func, 0x4) & 0xFFFF0000) != 0x100000) return 0; // does not support capabilities
+	uint8_t off = _pciReadDWord(ent.bus, ent.dev, ent.func, 0x34) & 0xFC;
+	while (1) { //TODO: check for end of capabilities
+		if ((_pciReadDWord(ent.bus, ent.dev, ent.func, off) & 0xFF) == id) return off;
+		off = (_pciReadDWord(ent.bus, ent.dev, ent.func, off) & 0xFC00) >> 8;
+	}
+}
+
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 void ISR2AB_handler(uint32_t opt0) {
 	for (PCIEntry* i = pciEntries; i != 0; i = i->next) {
 		if (i->irqLine == (opt0 & 0xFF) && (_pciReadDWord(i->bus, i->dev, i->func, 0x1) & 0x80000) == 0x80000) {
-			//TODO: handle device
+			if (i->handler != 0) i->handler(i, opt0);
 			return;
 		}
 	}

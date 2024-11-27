@@ -18,11 +18,11 @@ typedef struct processState {
 	uint32_t eflags;
 	uint32_t cr3;
 	uint32_t PID;
-	struct processState* next;
 	uint32_t argc;
-	uint32_t argv;
 	uint32_t HS;
 	uint8_t priority; //bits 0-6: priority; bit 7: toStart
+	uint32_t kHeapVaddr; // kernel virtual address to process' heap
+	struct processState* next;
 } __attribute((packed)) processState;
 
 /*
@@ -31,7 +31,6 @@ typedef struct processState {
 typedef struct processSetup {
 	uint8_t res; //0 if process is ok, otherwise data is invalid
 	processState state; //processState for the new process
-	uint32_t codeB; //Base address for the start of the code
 
 } processSetup;
 
@@ -42,17 +41,12 @@ typedef struct processSetup {
 extern void startProcess(processState* state);
 
 /*
-	Kills the current running process
-*/
-extern void killProcess(void);
-
-/*
 	Creates paging structures for the process
 	src: Pointer to executable
 
 	Unlike the similar function in kernel/ELFParse.h, this function actually modifies the paging tables
 */
-extern processSetup setupProcess(uint8_t* volatile src);
+extern processSetup setupProcess(uint8_t* src, uint8_t priority, uint32_t argc, uint8_t** argv);
 
 /*
 	Resets current running processes memory and paging structure

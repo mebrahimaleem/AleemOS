@@ -4,10 +4,10 @@
 
 [ORG 0xAC00]
 
-VBR_READ_FILE equ 0x7d00 ;This is the memory location of the VBR readBoot routine, params: bx: where to copy file, si: pointer to name of file
-
 ;We have not switched to 32-bit mode yet
 [BITS 16]
+
+MBR_READ_SECTOR equ 0x72C ;This is the memory location of the MBR readsector routine, params: bx: LBA of sector to read, es:cx: where to write sector
 
 ;Save drive parameters, boot drive, and partion offset
 mov BYTE [DRIVE_NO], dl
@@ -32,6 +32,8 @@ call real_print
 .hang: jmp .hang
 pci_err_msg: db "FATAL: Failed to verify PCI mechanism #1 exists. System Hang.", 0
 
+loading_msg db "Loading... Please Wait", 0
+
 pci_ok:
 
 ;Set the VGA video mode
@@ -44,19 +46,8 @@ mov ch, 0
 mov cl, 15
 int 0x10
 
-;Now we need to copy the kernel onto the RAM
-mov si, KERNEL_FNAME ;file to copy
-mov cx, 0xE000 ;Where to copy kernel
-call VBR_READ_FILE
-xor dx, dx
-mov es, dx
-
-;Copy the default application (sh.elf) onto the RAM
-mov si, DEFAPP_FNAME
-mov cx, 0x0800
-call VBR_READ_FILE
-xor dx, dx
-mov es, dx
+mov si, loading_msg
+call real_print
 
 ;Now we need the memory map
 get_mmap:
@@ -107,8 +98,23 @@ xor dh, dh
 mov dl, [DRIVE_NO]
 mov bx, 0x600
 mov ah, 3
+clc
 int 0x13
 
+; Enable A20
+; TODO: try other A20 enable methods as well
+in al, 0x92
+test al, 0x2
+jnz .enabled
+and al, 0xFE
+out 0x92, al
+.enabled:
+
+xor ax, ax
+mov ds, ax
+mov es, ax
+push es
+push ds
 ;Now we need to enter PM
 cli ;We will disable interupts until the kernel has correctly set up the IDT
 lgdt [GDT_ptr] ;Load the GDT descriptor
@@ -116,6 +122,7 @@ lgdt [GDT_ptr] ;Load the GDT descriptor
 mov eax, cr0 ;Set the PM bit
 or eax, 0x01
 mov cr0, eax
+jmp enter_pm
 jmp CODE_SEG:enter_pm ;Far jump to 32-bit (to set CS)
 
 ;Kernel Data structure
@@ -138,10 +145,205 @@ PIT_WHLMS dd 0
 ;Keyboard queue pointer
 KEYBOARD_QUEUE dd 0
 
-;We are now in 32-bit mode (but we stil need to set the segments registers)
+T_BUF equ 0x800
+
+; Disk Address Packet
+I13_SIZE db 0x10
+I13_RES0 db 0
+I13_TRN dw 0
+I13_BUF dd T_BUF
+I13_BLN dq 0
+
+CLS_SZ equ 8
+
+disk_err_msg: db " FATAL: Failed to read disk. System Hang.", 0
+disk_fail:
+mov si, disk_err_msg
+add ah, '0'
+mov BYTE [si], ah
+call pm_print
+.hang jmp .hang
+
+copy: ;edi destination, ebx sector on disk, ecx number of sectors (must be multiple of 8)
+mov WORD [I13_TRN], CLS_SZ
+
+.loop:
+mov dl, BYTE [DRIVE_NO]
+mov si, I13_SIZE
+mov ah, 0x42
+mov DWORD [I13_BLN], ebx
+
+clc
+int 0x13
+
+cmp ah, 0
+jne disk_fail
+
+mov esi, T_BUF
+mov dx, 0x400
+.copy0:
+mov eax, DWORD [esi]
+mov DWORD [gs:edi], eax
+dec dx
+add esi, 4
+add edi, 4
+cmp dx, 0
+jne .copy0
+
+add ebx, CLS_SZ
+sub ecx, CLS_SZ
+cmp ecx, 0
+jne .loop
+
+ret
+
+BPB equ 0x7c00
+FAT equ 0x400000
+CSV equ 0x1000
+
+ROOT equ 2113
+
+T_DI dd 0
+
+copy_file: ;edi destination, si file name
+mov edx, DWORD [BPB + 44] ; cluster index
+sub edx, 2
+
+mov DWORD [T_DI], edi
+
+push edx ; fat offset
+push si
+
+call .calc_fat
+
+mov ecx, CLS_SZ
+mov edi, T_BUF
+call copy
+
+pop si
+pop edx
+
+mov bx, T_BUF
+
+.find_file:
+push si
+mov di, bx
+mov cx, 11
+repe cmpsb
+pop si
+test cx, cx
+jz .read_file
+
+add bx, 32
+cmp bx, CSV+T_BUF
+jne .find_file
+add edx, 2
+shl edx, 2 ; * 4
+mov edx, DWORD [edx+FAT]
+sub edx, 2
+jmp .find_file
+; TODO: implement end of file error
+
+push edx ; fat offset
+push si
+
+call .calc_fat
+
+mov ecx, 4
+mov edi, T_BUF
+call copy
+
+pop si
+pop edx
+
+mov bx, T_BUF
+jmp .find_file
+
+.calc_fat:
+mov eax, CSV/0x200
+mul edx
+mov ebx, eax
+add ebx, ROOT
+ret
+
+.read_file:
+movzx edx, WORD [bx+20]
+shl edx, 16
+mov dx, WORD [bx+26]
+sub edx, 2
+
+.file_loop:
+push edx
+call .calc_fat
+
+mov ecx, CLS_SZ
+mov edi, DWORD [T_DI]
+call copy
+
+pop edx
+add edx, 2
+shl edx, 2 ; * 4
+mov edx, DWORD [edx+FAT]
+
+mov eax, DWORD [T_DI]
+add eax, CSV
+mov DWORD [T_DI], eax
+
+sub edx, 2
+cmp edx, 0x0fffffff-2
+jne .file_loop
+
+ret
+
+
 [BITS 32]
 enter_pm:
-;Set the segment registers
+mov ax, DATA_SEG
+mov gs, ax
+
+mov eax, cr0
+and al, 0xFE
+mov cr0, eax
+
+jmp 0x0:enter_unreal
+
+[BITS 16]
+enter_unreal:
+pop ds
+pop es
+sti
+
+; Copy FAT
+mov ecx, 0x410
+mov ebx, 33
+mov edi, 0x400000
+call copy
+
+; Copy kernel
+mov edi, KERNEL_ADDR
+mov esi, KERNEL_NAME
+call copy_file
+
+; Copy defapp
+mov edi, SH_ADDR
+mov esi, SH_NAME
+call copy_file
+
+cli
+mov eax, cr0 ;Set the PM bit
+or al, 0x01
+mov cr0, eax
+jmp CODE_SEG:renter_pm
+
+KERNEL_NAME db "KERNEL  BIN"
+SH_NAME db "SH      ELF"
+
+KERNEL_ADDR equ 0xD000
+SH_ADDR equ 0x1800
+
+[BITS 32]
+renter_pm:
+;Set the segment registers (again)
 mov ax, DATA_SEG
 mov ds, ax
 mov ss, ax
@@ -272,12 +474,11 @@ mov gs, ax
 
 sti
 
-;Now we need to setup and enable paging
-mov eax, PAGE_TABLE_1
-or eax, 3
-mov [PAGE_DIRECTORY], eax
+;Enable paging
+mov eax, cr4
+or al, 0x10
+mov cr4, eax
 
-;Set control register
 mov eax, PAGE_DIRECTORY
 mov cr3, eax
 
@@ -330,8 +531,6 @@ out 0x40, al ;Set the reload value
 mov al, ah
 out 0x40, al
 
-; Jump to boot2e
-
 mov eax, 0x0
 mov ecx, [KHEADS]
 mov edx, [KBOOTNO]
@@ -341,7 +540,7 @@ mov edi, KERNEL_DATA
 mov ebp, 0x9fa00
 mov esp, ebp
 
-jmp 0xe000
+jmp 0xd000
 
 ;Bootloader real_print routine - prints a null terminated string pointed by si. Modifies si
 real_print:
@@ -391,9 +590,6 @@ DRIVE_NO db 0 ;Our boot drive number
 PARTION_OFFSET dw 0 ;Offset of active partion in the partion table
 TRACK_SECTORS dw 0 ;Number of sectors per track
 HEADS dw 0 ;Number of heads
-
-KERNEL_FNAME db "KERNEL  BIN"
-DEFAPP_FNAME db "SH      ELF"
 
 ;NOTE: 	The remaining code defines the various system datastructures that are used in protected mode. Most OS implementations do this in the kernel, but in order
 				;to call the kernel in protected mode, we will declare these in the bootloader and the kernel can access them later (using sgdt sidt, Etc.)
@@ -888,7 +1084,7 @@ GDT_ptr: ;This is the descriptor for the GDT
 CODE_SEG equ GDT_code - GDT_start
 DATA_SEG equ GDT_data - GDT_start
 
-times 0x1400-($-$$) - 8 * 6 db 0;We need to be 4KiB aligned
+times 0x1400-($-$$) - 8 * 6 db 0
 
 GDT_start:
 	GDT_null: ;NULL descriptor
@@ -907,21 +1103,23 @@ GDT_start:
 		db 10010010b
 		db 11001111b
 		db 0x00
-	dq 0 ; User code (set by boot2)
-	dq 0 ; User data (set by boot2)
+	dq 0
+	dq 0
 	dq 0 ; TSS
 	GDT_end:
 
+times 0x1400-($-$$) db 0
+
 ;Page directory
 PAGE_DIRECTORY:
-times 1024 dd 2 ;Create non present pages
-
-;Page table 1
-PAGE_TABLE_1:
 %assign i 0
-%rep 1024
-	dd ((i * 0x1000) | 3) + 0x0000
+%rep 2
+	dd ((i << 22) | 0x83)
 %assign i i+1
 %endrep
 
-;No need to pad out file since this file is stored in the filesystem
+times 1021 dd 2
+
+dd (0x00000000 | 0x83)
+
+times 0x2400-($-$$) db 0

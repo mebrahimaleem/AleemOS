@@ -11,20 +11,16 @@
 
 uint32_t last_exitcode = 0;
 
-#pragma GCC push_options
-#pragma GCC optimize("O0")
-
 //sysCall is meant for handling system calls from userland
-uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
+uint32_t sysCall(uint32_t call, uint32_t params){
 	uint32_t ret = 0;
 	switch (call){
-		case 0: //kill(exitcode)
-			last_exitcode = params;
-			killProcess();
+		case 0: //kill(PID)
+			ret = killProcess(params);
 			break;
 		case 1: //printchar(char)
 			vgaprintchar((uint8_t)params, 0x0F);
-			params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+			params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 			backslock = (uint32_t)vgacursor;
 			goto blink;
 		blink:
@@ -35,7 +31,6 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 			outb(0x3D5, (uint8_t)((params >> 8) & 0xFF));
 			break;
 		case 3: //getchar()
-			break;
 			setKBDEventTrack(1);
 			while (1){
 				if (KBDNextEvent != 0){
@@ -43,7 +38,7 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 					KBDNextEvent = KBDNextEvent->next;
 					if (ret != 0){
 						vgaprintchar((uint8_t)ret, 0x0F);
-						params = (uint32_t)(vgacursor - (volatile uint8_t*)0xb8000)/2;
+						params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
 						setKBDEventTrack(0);
 						goto blink;
 					}
@@ -51,27 +46,38 @@ uint32_t sysCall(uint32_t cs, uint32_t call, uint32_t params){
 				asm volatile ("sti \n hlt \n cli" : : : "memory");
 				continue;
 			}
+			break;
 		case 4: //getcursorpos()
-			ret = (uint32_t)(vgacursor - (volatile uint8_t* volatile)0xb8000)/2;
+			ret = (uint32_t)(vgacursor - (uint8_t* )0xb8000)/2;
+			break;
+		case 5: //lockcursor()
+			backslock = (uint32_t)vgacursor;
+			break;
+		case 6: //printstring(heapOffset)
+			vgaprint((const char*)procHeapToKVaddr(_schedulerCurrentProcess->kHeapVaddr, params), 0x0F);
+			params = (uint32_t)(vgacursor - (uint8_t*)0xb8000)/2;
+			backslock = (uint32_t)vgacursor;
+			goto blink;
+			break;
+		case 8: //pid() - returns processes PID
+			ret = _schedulerCurrentProcess->PID;
 			break;
 		default:
 			break;
 	}
 
-	//We need to execute a far return
-	asm volatile ("mov eax, %0 \n leave \n retf" : : "m"(ret), "m"(cs) : "memory");
-	return 0;
+	return ret;
 }
 
 //processManager is meant for handling exception caused interupts, IRQs
-void processManager(uint32_t cs, uint32_t check){
+void processManager(uint32_t check){
 	//Check for kill process
 	if ((check & 0x20) == 0x20){
 		last_exitcode = check;
-		vgaprint((volatile char* volatile)"An exception has occured! Error code: ", 0x40);
+		vgaprint("An exception has occured! Error code: ", 0x40);
 		vgaprintint(check - 0x20, 16, 0x40);
-		vgaprint((volatile char* volatile)"\n", 0x40);
-		killProcess();
+		vgaprint("\n", 0x40);
+		killProcess(_schedulerCurrentProcess->PID);
 	}
 
 	//Check for IRQ1
@@ -111,7 +117,9 @@ void processManager(uint32_t cs, uint32_t check){
 		asm volatile ("push eax \n mov al, 0x20 \n out 0x20, al \n pop eax" : : : "memory");
 	}
 
-	//We need to execute a far return
-	asm volatile ("leave \n retf" : : "m"(cs) : "memory");
+	return;
 }
-#pragma GCC pop_options
+
+inline uint32_t procHeapToKVaddr(uint32_t kHeapVaddr, uint32_t heapOffset) {
+	return kHeapVaddr + heapOffset;
+}

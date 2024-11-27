@@ -10,7 +10,7 @@ INPUT
 	build/portio.elf
 	build/basicio.elf
 	build/utils.elf
-	build/signals.elf
+	build/paging.elf
 	build/pci.elf
 	build/xhci.elf
 	build/kbd.elf
@@ -25,7 +25,7 @@ INPUT
 OUTPUT(build/kerneld.elf)
 
 SECTIONS {
-	. = 0xE000;
+	. = 0xD000;
 	.text : {
 		*(.text)
 		*(.rodata)

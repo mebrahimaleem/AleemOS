@@ -3,24 +3,23 @@
 #ifndef __STDC_ALEEMOS_C
 #define __STDC_ALEEMOS_C
 #include <stdint.h>
-#include <stdarg.h>
 #include "stdlib.h"
+#include "string.h"
 #include "AleemOS.h"
 
-
-#pragma GCC push_options
-#pragma GCC optimize("O0")
 int blink(int x, int y){
-	asm volatile ("pushad \n push 2 \n push %0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n popad" : : "b"((uint32_t)(y * 80 + x)) : "memory");
+	_syscall(2, (uint32_t)(y * 80 + x));
 	return 0;
 }
 
 int cursorPos(){
-	int ret;
-	asm volatile ("pushad \n push 4 \n push 0 \n mov eax, esp \n int 0x30 \n add esp, 8 \n mov [esp-4], eax \n popad \n mov %0, dword [esp-40]"
-		: "=b"((uint32_t)ret) : : "memory"); //NOTE: esp-40 Should actually be esp-36, but gcc subtracts 4 (still compiles to esp-36, esp-36 would compile to esp-32)
-	return ret;
+	return (int)_syscall(4, 0);
 }
-#pragma GCC pop_options
+
+void _ls(const char* path) {
+	char* params = (char*)malloc(strlen(path)+1);
+	strcpy(params, path);
+	_syscall(7, (uint32_t)params - __PROCESS_HEAP_BASE);
+}
 
 #endif

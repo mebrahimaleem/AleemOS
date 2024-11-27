@@ -91,7 +91,7 @@ typedef struct ElfPageList {
 	returns status code (see implementation)
 	Function will fill the structures pointed by the arguments
 */
-extern uint8_t parseElf(uint8_t* volatile src, Elf32sheader** shead, Elf32pheader** phead, Elf32Half* snum, Elf32Half* pnum, uint8_t** strtbl, uint32_t* entry);
+extern uint8_t parseElf(uint8_t* src, Elf32sheader** shead, Elf32pheader** phead, Elf32Half* snum, Elf32Half* pnum, uint8_t** strtbl, uint32_t* entry);
 
 /*
 	Determines paging information for ELF file
@@ -102,7 +102,7 @@ extern uint8_t parseElf(uint8_t* volatile src, Elf32sheader** shead, Elf32pheade
 	returns status code (see implementation)
 	Function will fill out the structures pointed by the arguments
 */
-extern uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* size);
+extern uint8_t calcELF(uint8_t* src, ElfPageList** pages, uint32_t* size);
 
 /*
 	Copies the neccesary parts of the executable
@@ -113,4 +113,4 @@ extern uint8_t calcELF(uint8_t* volatile src, ElfPageList** pages, uint32_t* siz
 	returns status code (see implementation)
 	Function will fill out the structures pointed by the arguments
 */
-extern uint8_t copyELF(uint8_t* volatile src, uint8_t* volatile dst, uint32_t* volatile ent);
+extern uint8_t copyELF(uint8_t* src, uint8_t* dst, uint32_t* ent);

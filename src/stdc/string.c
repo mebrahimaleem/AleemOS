@@ -27,6 +27,7 @@ char* strcpy(char* dest, const char* src){
 		*i = *j;
 		i++;
 	} 
+	*i = 0;
 	return dest;
 }
 #endif

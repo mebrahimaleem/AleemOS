@@ -11,19 +11,19 @@ typedef struct BlockDescriptor {
 } __attribute((packed)) BlockDescriptor;
 
 void* malloc(size_t size){
-	BlockDescriptor* volatile block = (BlockDescriptor*)__PROCESS_HEAP_BASE;
+	BlockDescriptor* block = (BlockDescriptor*)__PROCESS_HEAP_BASE;
 	while (1){
 		if (block->flags == 0){
 			block->flags = 1;
 			block->size = size & 0x3FFFFFFF;
-			((BlockDescriptor* volatile)(((uint8_t* volatile)block)+4+size))->flags = 0;
+			((BlockDescriptor* )(((uint8_t* )block)+4+size))->flags = 0;
 			break;
 		}
 		else if (block->flags == 2){
 			if (block->size >= size+5){
 				block->flags = 1;
-				((BlockDescriptor* volatile)(((uint8_t* volatile)block)+4+size))->flags = 2;
-				((BlockDescriptor* volatile)(((uint8_t* volatile)block)+4+size))->size = (block->size - size - 4) & 0x3FFFFFFF;
+				((BlockDescriptor* )(((uint8_t* )block)+4+size))->flags = 2;
+				((BlockDescriptor* )(((uint8_t* )block)+4+size))->size = (block->size - size - 4) & 0x3FFFFFFF;
 				break;
 			}
 			else if (block->size >= size){
@@ -31,22 +31,22 @@ void* malloc(size_t size){
 				break;
 			}
 		}
-		block = (BlockDescriptor* volatile)(((uint8_t* volatile)block)+4 + block->size);
+		block = (BlockDescriptor* )(((uint8_t* )block)+4 + block->size);
 		continue;
 	}
 
-	return (void*)(((uint8_t* volatile)block)+4);
+	return (void*)(((uint8_t* )block)+4);
 }
 
 void free(void* ptr){
-	BlockDescriptor* volatile desc = (BlockDescriptor*)((uint8_t*)ptr - 4);
-	if (((BlockDescriptor* volatile)((uint8_t* volatile)ptr + desc->size))->flags == 0)
+	BlockDescriptor* desc = (BlockDescriptor*)((uint8_t*)ptr - 4);
+	if (((BlockDescriptor* )((uint8_t* )ptr + desc->size))->flags == 0)
 		desc->flags = 0;
 	
-	else if (((BlockDescriptor* volatile)((uint8_t* volatile)ptr + desc->size))->flags == 2){
+	else if (((BlockDescriptor* )((uint8_t* )ptr + desc->size))->flags == 2){
 		desc->flags = 2;
 		desc->size = 0x3FFFFFFF &
-			(uint32_t)(desc->size + 4 + ((BlockDescriptor* volatile)((uint8_t* volatile)ptr + desc->size))->size);
+			(uint32_t)(desc->size + 4 + ((BlockDescriptor* )((uint8_t* )ptr + desc->size))->size);
 	}
 
 	else
@@ -56,7 +56,7 @@ void free(void* ptr){
 }
 
 char* itoa(int value, int base){
-	char* str;
+	char* str = 0;
 	char* st = malloc(64);
 
 	if (value == 0){
@@ -117,11 +117,11 @@ void* realloc(void* ptr, size_t size){
 		return (void*)0;
 	}
 
-	BlockDescriptor* volatile desc = (BlockDescriptor*)((uint8_t*)ptr - 4);
+	BlockDescriptor* desc = (BlockDescriptor*)((uint8_t*)ptr - 4);
 	if (desc->size >= size) return ptr; //Check if we already allocated enough memory	
-	if (((BlockDescriptor* volatile)((uint8_t* volatile)ptr + desc->size))->flags == 0){
+	if (((BlockDescriptor* )((uint8_t* )ptr + desc->size))->flags == 0){
 		desc->size = 0x3FFFFFFF & size;
-		((BlockDescriptor* volatile)((uint8_t* volatile)ptr + size))->flags = 0;
+		((BlockDescriptor* )((uint8_t* )ptr + size))->flags = 0;
 		return ptr;
 	}
 

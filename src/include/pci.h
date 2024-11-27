@@ -18,12 +18,18 @@ typedef enum {
 	USB_NOHC //USB with no host						0x0c 0x03 0xfe
 } PCIType;
 
+struct PCIEntry;
+
+typedef void (*pciHandler)(struct PCIEntry*, uint32_t);
+
 typedef struct PCIEntry {
 	uint8_t bus;
 	uint8_t dev;
 	uint8_t func;
 	uint8_t irqLine;
 	PCIType type;
+	pciHandler handler;
+	void* AVL;
 	struct PCIEntry* next;
 } PCIEntry;
 
@@ -31,3 +37,4 @@ extern uint32_t _pciReadDWord(uint8_t bus, uint8_t dev, uint8_t func, uint8_t ad
 extern void _pciWriteDWord(uint8_t bus, uint8_t dev, uint8_t func, uint8_t addr, uint32_t dat);
 extern PCIEntry* getPCIDevices(void);
 extern void ISR2AB_handler(uint32_t opt0);
+extern uint8_t findCapability(PCIEntry ent, uint8_t id);

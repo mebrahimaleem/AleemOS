@@ -8,12 +8,19 @@
 #include <string.h>
 #include <AleemOS.h>
 
-int main(int argc, char** argv){
-	printf("AleemOS 0.0.0 IA-32\nPlease see the licensing for AleemOS at https://github.com/mebrahimaleem/AleemOS/blob/main/LICENSE\n\nWelcome to AleemOS Shell\n");
+const char* curDir = "~";
 
-	printf(">");
+int main(int argc, char** argv){
+	printf("%s", "AleemOS 0.0.0 IA-32\nPlease see the licensing for AleemOS at https://github.com/mebrahimaleem/AleemOS/blob/main/LICENSE\n\nWelcome to AleemOS Shell\n");
+	
+	//Check if starting directory was passed
+	if (argc >= 2) curDir = argv[1];
+	
+	printf("root:%s$ ", curDir);
+
+	char c;
 	while (1){
-		//Get next command
+		scanf("%c", &c);
 	}
 	return 0;
 }
