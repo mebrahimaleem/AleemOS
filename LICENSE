@@ -1,3 +1,12 @@
+This software uses software under other licenses. For the additional terms and
+conditions for copying, distributing, and modification please see:
+	cc/COPYING
+	cc/COPYING3
+	cc/COPYING.LIB
+	cc/COPYING.RUNTIME
+
+------------------------------------------------------------------------------
+
 MIT License
 
 Copyright 2022-2024 Ebrahim Aleem
