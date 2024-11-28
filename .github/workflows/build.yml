@@ -10,10 +10,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
       - name: Install Packages
-        run: sudo apt install nasm fatattr
+        run: sudo apt install nasm build-essential fatattr bison flex libgmp3-dev libmpfr3-dev libmpc-dev texinfo libisl-dev
       - name: Build CC
-        run: make cc
+        run: make cc -j6
       - name: Update Path
         run: export PATH="$PWD/cc/cross/kernel-prefix/bin:$PATH"
       - name: Build OS
-        run: make os
+        run: make os -j6
