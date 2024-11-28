@@ -11,7 +11,9 @@ jobs:
         uses: actions/checkout@v2
       - name: Install Packages
         run: sudo apt install nasm fatattr
-      - name: Create Directories
-        run: mkdir build/ build/stdc/ mnt/
+      - name: Build CC
+        run: make cc
+      - name: Update Path
+        run: export PATH="$PWD/cc/cross/kernel-prefix/bin:$PATH"
       - name: Build OS
-        run: sudo make os
+        run: make os
